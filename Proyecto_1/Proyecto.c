@@ -12,11 +12,22 @@ int Tellme_lines(char *Archivo);
 int esPrimo(int numero);
 void Separacion_lineas(Nodo **a[],int Num_process,int M,Nodo **Lista_Numeros,Nodo **P0, Nodo **P1,Nodo **P2,Nodo **P3,Nodo **P4,Nodo **P5,Nodo **P6,Nodo **P7,Nodo **P8,Nodo **P9, Nodo **Lista_Tareas);
 void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_Tareas);
+void *Crear_hilos(void *arg);
+void *ImprimirNumeroPrimoHilo(void *arg);
 void inicializarProcesos(Nodo **Lista_Tareas, int Proceso,int Tareas);
 void ProgramError(long x );
 struct Parametros{
 	int Numero_Hilos;
+	int NumeroLineas;
 	Nodo *Lista_Numeros;
+
+};
+
+
+struct Parametros_{
+	int Hilo;
+	int Tarea;
+	Nodo *Lista_N;
 };
 
 
@@ -31,10 +42,16 @@ int main(int argc, char *argv[])
 		long Num_process;
 		Nodo **a[10];  // arreglo de apuntadores donde iran el apuntador a conjuntos de lineas las culaes se les asignaran a los Procesos hijos por el padre.
 		Nodo *Lista_Numeros=NULL;  //Inicializa la lista de Numeros que seran comprobados.
-		Nodo *P0,*P1,*P2,*P3,*P4,*P5,*P6,*P7;
+		Nodo *P0=NULL;
+		Nodo *P1=NULL;
+		Nodo *P2=NULL;
+		Nodo *P3=NULL;
+		Nodo *P4=NULL;
+		Nodo *P5=NULL;
+		Nodo *P6=NULL;
+		Nodo *P7=NULL;
 		Nodo *P8=NULL;
-		Nodo *P9=NULL;
-		
+		Nodo *P9=NULL;	
 		Nodo *Lista_Tareas=NULL;  // Inicializa Una lista donde estaran en cada Nodo la cantidad de tareas que realizara cada Proceso/Hilo.
 		Num_process=strtol(argv[3],NULL,10);  //Numero de procesos solicitados por consola 
 		ProgramError(Num_process);
@@ -90,33 +107,13 @@ int main(int argc, char *argv[])
 		else{
 			for(int i=0;i<N;i++){
 				if((wpid=wait(NULL))>=0){
-					 //printf("Proceso: %d  terminado\n",wpid);
-       
 
 				}
 			}
+			printf("Programa Termiando\n");
 		}
 
 
-
-		//a[0]=&P1;
-		//InsertarInicio(a[0],10000);
-		//Nodo *b[9];
-		//b[8]=P9;
-
-		//ImprimirLista(b[8]);
-		//printf("%ld",count/(Num_process-1)+(count%(Num_process-1)));
-		//ImprimirLista(P1);
-		//printf("\n\n");
-		//ImprimirLista(P2);
-		//printf("\n\n");
-		//ImprimirLista(P3);
-		//printf("\n\n");
-		//ImprimirLista(P4);
-		//Comprobar_Numero_Primo(a,Num_process,2);
-		//har caca;
-		//caca=DeEnteroaCaracter(50);
-		//printf("%c", caca);
 
 
       
@@ -129,7 +126,8 @@ int main(int argc, char *argv[])
 		int Numero=0;
 		int i=0;
 		long Num_threads;
-		Nodo *Lista_Numeros;
+		Nodo *Lista_Numeros=NULL;
+		Nodo *Lista_Tareas=NULL;
 		Num_threads=strtol(argv[3],NULL,10);  //Numero de procesos solicitados por consola 
 		ProgramError(Num_threads);
 		FILE *file=fopen(argv[1], "rt");
@@ -150,14 +148,95 @@ int main(int argc, char *argv[])
 
 		}
 
+		pthread_t Master;
+		struct Parametros p;
+		p.Numero_Hilos=Num_threads;
+		p.Lista_Numeros=Lista_Numeros;
+		p.NumeroLineas=count;
+
+		pthread_create(&Master,NULL, Crear_hilos,(void *)&p);
+		pthread_join(Master,NULL);
+
+
+
+
+
+
+
+
+
 	}
 
 
 }
 
 
+void *Crear_hilos(void *arg){
+	struct Parametros *p;
+	p=(struct Parametros *)arg;
+	struct Parametros_ p1;
+	int Tarea1=(p->NumeroLineas)/(p->Numero_Hilos);
+	int Tarea2=(p->NumeroLineas)/(p->Numero_Hilos)+(p->NumeroLineas)%(p->Numero_Hilos);
+	p1.Lista_N=p->Lista_Numeros;
+	pthread_t Worker;
+	for(int i=0;i<p->Numero_Hilos;i++){
+		if(i!=(p->Numero_Hilos-1)){
+		p1.Hilo=i;
+		p1.Tarea=Tarea1;
+		pthread_create(&Worker,NULL,ImprimirNumeroPrimoHilo,(void *)&p1);
+		pthread_join(Worker,NULL);
+		}
+		else if(i==(p->Numero_Hilos-1)){
+		p1.Hilo=i;
+		p1.Tarea=Tarea2;
+		pthread_create(&Worker,NULL,ImprimirNumeroPrimoHilo,(void *)&p1);
+		pthread_join(Worker,NULL);
+
+		}
+		
+	}
+	printf("Programa Terminado\n");
 
 
+
+
+
+}
+
+void *ImprimirNumeroPrimoHilo(void *arg){
+	struct Parametros_ *s;
+	s=(struct Parametros_ *)arg;
+	char Texto_completo[50];
+	char texto2[]=".txt";
+	char texto1[50];
+	int Chequear_Numero;
+	char Numero_chequeado[50];
+	int i;
+	i=s->Hilo;
+	sprintf(texto1, "%d", i);
+	strcat(texto1,texto2);
+	FILE *file=fopen(texto1,"w");
+	if(file==NULL){
+		perror("Error en la creacion del archivo \n\n");
+
+		}else{
+
+		for(int j=0;j<s->Tarea;j++){
+			Chequear_Numero= EliminarInicio(&s->Lista_N);
+			if(esPrimo(Chequear_Numero)==1){
+				fprintf(file, "%d %c", Chequear_Numero,'1');
+			}else{
+				fprintf(file, "%d %c",Chequear_Numero,'0');
+			}
+			fputc('\n',file) ;
+			}
+			fflush(file);
+			fclose(file);
+		}
+
+
+
+}
 
 int esPrimo(int numero) {
   if (numero == 0 || numero == 1){
@@ -209,37 +288,53 @@ int Tellme_lines(char *Archivo)
 }
 
 void Separacion_lineas(Nodo **a[10],int Num_process,int M,Nodo **Lista_Numeros,Nodo **P0, Nodo **P1,Nodo **P2,Nodo **P3,Nodo **P4,Nodo **P5,Nodo **P6,Nodo **P7,Nodo **P8,Nodo **P9,Nodo **Lista_Tareas){
-	a[0]=P0,a[1]=P1,a[2]=P2,a[3]=P3,a[4]=P4,a[5]=P5,a[6]=P6,a[7]=P7;
+	a[0]=P0;
+	a[1]=P1;
+	a[2]=P2;
+	a[3]=P3;
+	a[4]=P4;
+	a[5]=P5;
+	a[6]=P6;
+	a[7]=P7;
 	a[8]=P8;
 	a[9]=P9;
 	int N=Num_process;
 	int Tarea1= M/N;
 	int Tarea2=M/N+(M%N);
 	int x;
-
-	for(int i=0;i<N;i++){
-		if(i!=(N-1)){
-			if (i==0){
-				InsertarInicio(Lista_Tareas,i);
-				InsertarFinal(Lista_Tareas,Tarea1);
-			}else{
-				InsertarFinal(Lista_Tareas,i);
-				InsertarFinal(Lista_Tareas,Tarea1);
-			}
+	if(N!=1){
+		for(int i=0;i<N;i++){
+			if(i!=(N-1)){
+				if (i==0){
+					InsertarInicio(Lista_Tareas,i);
+					InsertarFinal(Lista_Tareas,Tarea1);
+				}else{
+					InsertarFinal(Lista_Tareas,i);
+					InsertarFinal(Lista_Tareas,Tarea1);
+				}
 							
-			for(int j=0;j<Tarea1;j++){
-				x=EliminarInicio(Lista_Numeros);
-				InsertarInicio(a[i],x);
+				for(int j=0;j<Tarea1;j++){
+					x=EliminarInicio(Lista_Numeros);
+					InsertarInicio(a[i],x);
+				}
+			}
+			else if(i==(N-1)){
+				InsertarFinal(Lista_Tareas,i);
+				InsertarFinal(Lista_Tareas,Tarea2);
+				for(int j=0;j<Tarea2;j++){
+					x=EliminarInicio(Lista_Numeros);
+					InsertarInicio(a[i],x);
+				}
 			}
 		}
-		else if(i==(N-1)){
-			InsertarFinal(Lista_Tareas,i);
-			InsertarFinal(Lista_Tareas,Tarea2);
-			for(int j=0;j<Tarea2;j++){
-				x=EliminarInicio(Lista_Numeros);
-				InsertarInicio(a[i],x);
-			}
+	}else{
+		InsertarInicio(Lista_Tareas,0);
+		InsertarFinal(Lista_Tareas,Tarea1);
+		for(int j=0;j<Tarea1;j++){
+			x=EliminarInicio(Lista_Numeros);
+			InsertarInicio(a[0],x);
 		}
+
 	}
 
 }

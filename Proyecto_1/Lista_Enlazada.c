@@ -1,7 +1,6 @@
 #include "Lista_Enlazada.h"
 
 
-
 Nodo *CrearNodo(int Dato){
 	Nodo *Nuevo=NULL;
 	Nuevo= (Nodo*)malloc(sizeof(Nodo));
@@ -57,6 +56,18 @@ int InsertarFinal(Nodo **Cabeza, int Dato){
 		return 1;
 	}
 	return 0;
+
+}
+int ListaSize(Nodo **Cabeza){
+	Nodo *aux= *Cabeza;
+	int size=0;
+	while(aux->siguiente!=NULL){
+		size=size+1;
+		aux=aux->siguiente;
+		
+	}
+
+	return size;
 
 }
 int EliminarFinal(Nodo **Cabeza){

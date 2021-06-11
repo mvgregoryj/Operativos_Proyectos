@@ -148,6 +148,7 @@ int main(int argc, char *argv[])
 
 		}
 
+
 		pthread_t Master;
 		struct Parametros p;
 		p.Numero_Hilos=Num_threads;
@@ -263,7 +264,7 @@ int esPrimo(int numero) {
 int Tellme_lines(char *Archivo)
 {
 	char ca;
-	int count;
+	int count=0;
 
 	FILE *file=fopen(Archivo, "rt");    // abrimos el archivo en modo lectura
 		if (file==NULL){
@@ -275,7 +276,7 @@ int Tellme_lines(char *Archivo)
 			 ca = fgetc(file);
 
       	  if(ca == '\n'){
-        	    count++;
+        	    count=count+1;
         	}
         	if(ca == EOF){  //Si el caracter es end of file imprimimos el contador y salimos del while
           	  break;

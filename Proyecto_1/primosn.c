@@ -18,7 +18,6 @@ struct Parametros{
 	int Numero_Hilos;
 	int NumeroLineas;
 	Nodo *Lista_Numeros;
-	Nodo *Lista_Primos;
 
 };
 
@@ -26,8 +25,11 @@ struct Parametros{
 struct Parametros_{
 	int Hilo;
 	int Tarea;
+	int Hilos;
 	Nodo *Lista_N;
-	Nodo *Lista_P;
+	Nodo *Lista_Primos;
+
+
 };
 int main(int argc, char *argv[]){
 	char ca;
@@ -35,10 +37,9 @@ int main(int argc, char *argv[]){
 	cuenta=Tellme_lines(argv[1]);
 	int Numero=0;
 	int i=0;
+	int a[1]={0};
 	long Num_threads;
 	Nodo *Lista_Numeros=NULL;
-	Nodo *Lista_Primos=NULL;
-	InsertarInicio(&Lista_Primos,0);
 	Num_threads=strtol(argv[2],NULL,10);  //Numero de procesos solicitados por consola 
 	ProgramError(Num_threads);
 	FILE *file=fopen(argv[1], "rt");
@@ -58,15 +59,18 @@ int main(int argc, char *argv[]){
 
 	}
 
-	
+
+
 	pthread_t Master;
 	struct Parametros p;
 	p.Numero_Hilos=Num_threads;
 	p.Lista_Numeros=Lista_Numeros;
 	p.NumeroLineas=cuenta;
-	p.Lista_Primos=Lista_Primos;
 	pthread_create(&Master,NULL, Crear_hilos,(void *)&p);
 	pthread_join(Master,NULL);
+
+
+
 
 
 
@@ -81,49 +85,72 @@ void *Crear_hilos(void *arg){
 	int Tarea1=(p->NumeroLineas)/(p->Numero_Hilos);
 	int Tarea2=(p->NumeroLineas)/(p->Numero_Hilos)+(p->NumeroLineas)%(p->Numero_Hilos);
 	p1.Lista_N=p->Lista_Numeros;
-	p1.Lista_P=p->Lista_Primos;
+	p1.Hilos=p->Numero_Hilos;
+	Nodo *Cantidad_Primos=NULL;
+	p1.Lista_Primos=Cantidad_Primos;
 	pthread_t Worker;
 	for(int i=0;i<p->Numero_Hilos;i++){
 		if(i!=(p->Numero_Hilos-1)){
-		p1.Hilo=i;
-		p1.Tarea=Tarea1;
-		pthread_create(&Worker,NULL,ComprobarNumeroPrimoHilo,(void *)&p1);
-		pthread_join(Worker,NULL);
+			p1.Hilo=i;
+			p1.Tarea=Tarea1;
+			pthread_create(&Worker,NULL,ComprobarNumeroPrimoHilo,(void *)&p1);
+			pthread_join(Worker,NULL);
 		}
 		else if(i==(p->Numero_Hilos-1)){
-		p1.Hilo=i;
-		p1.Tarea=Tarea2;
-		pthread_create(&Worker,NULL,ComprobarNumeroPrimoHilo,(void *)&p1);
-		pthread_join(Worker,NULL);
+			p1.Hilo=i;
+			p1.Tarea=Tarea2;
+			pthread_create(&Worker,NULL,ComprobarNumeroPrimoHilo,(void *)&p1);
+			pthread_join(Worker,NULL);
 
 		}
 		
 	}
+	int Cantidad=0;
+	Cantidad=Tellme_lines("Primos.txt");
+	printf("La Cantidad de numeros primos es : %d\n", Cantidad);
+	remove("Primos.txt");
+
 	
-	printf("La cantidad de primos es: %d\n",EliminarInicio(&(p->Lista_Primos)));
+	
 	
 }
+
+
 void *ComprobarNumeroPrimoHilo(void *arg){
 	struct Parametros_ *s;
 	s=(struct Parametros_ *)arg;
 	int Chequear_Numero;
 	int i;
 	i=s->Hilo;
-	int Primo=0;
-	int x=0;
 
 	for(int j=0;j<s->Tarea;j++){
-		Chequear_Numero=EliminarInicio(&s->Lista_N);
+		Chequear_Numero=EliminarInicio(&(s->Lista_N));
 		if(esPrimo(Chequear_Numero)==1){
-			Primo=Primo+1;
+			InsertarInicio(&(s->Lista_Primos),Chequear_Numero);
 		}
 	}
-	
+	if(i==s->Hilos-1){
+		int Numero_Primos=0;
+		Numero_Primos=ListaSize(&s->Lista_Primos);
+		Numero_Primos++;
+		char texto[]="Primos.txt";
+		FILE *file=fopen(texto,"w");
+		if(file==NULL){
+		perror("Error en la creacion del archivo \n\n");
 
-	x=EliminarInicio(&s->Lista_P);
-	x=x+Primo;
-	InsertarInicio(&s->Lista_P,x);
-	
+		}else{
+
+		for(int j=0;j<Numero_Primos;j++){
+			Chequear_Numero= EliminarInicio(&(s->Lista_Primos));
+			fprintf(file, "%d", Chequear_Numero);
+			fputc('\n',file) ;
+			}
+			fflush(file);
+			fclose(file);
+		}
+		
+	}
+
 
 
 

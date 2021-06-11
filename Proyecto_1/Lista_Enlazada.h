@@ -18,5 +18,6 @@ int EliminarNodo(Nodo **Cabeza, int Dato);
 int EliminarInicio(Nodo **Cabeza);
 int EliminarFinal(Nodo **Cabeza);
 void ImprimirLista(Nodo *Cabeza);
+int ListaSize(Nodo **Cabeza);
 
 #endif

@@ -1,3 +1,14 @@
+/**
+ * @file Lista_Enlazada.c
+ * @author	Jonathan Bautista 16-10109
+ * 		   	Daniela Ramirez 16-10940
+ * 		   	Gregory Mu;oz 16-11313
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
+
 #include "Lista_Enlazada.h"
 
 
@@ -63,11 +74,13 @@ int ListaSize(Nodo **Cabeza){
 	int size=0;
 	while(aux->siguiente!=NULL){
 		size=size+1;
-		aux=aux->siguiente;
-		
+		aux=aux->siguiente;		
+	}
+	if (aux!=NULL){
+		return size+1;		
 	}
 
-	return size;
+	return -404;
 
 }
 int EliminarFinal(Nodo **Cabeza){

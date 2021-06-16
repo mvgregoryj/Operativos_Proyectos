@@ -1,10 +1,21 @@
+/**
+ * @file primosn.c
+ * @author 	Jonathan Bautista 16-10109
+ * 		   		Daniela Ramirez 16-10940
+ * 		   		Gregory Mu;oz 16-11313
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
+
 #include "Lista_Enlazada.c"
 
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
 #include <pthread.h>
 
 
@@ -18,9 +29,7 @@ struct Parametros{
 	int Numero_Hilos;
 	int NumeroLineas;
 	Nodo *Lista_Numeros;
-
 };
-
 
 struct Parametros_{
 	int Hilo;
@@ -28,9 +37,9 @@ struct Parametros_{
 	int Hilos;
 	Nodo *Lista_N;
 	Nodo *Lista_Primos;
-
-
 };
+
+
 int main(int argc, char *argv[]){
 	char ca;
 	int cuenta=0;
@@ -40,11 +49,11 @@ int main(int argc, char *argv[]){
 	int a[1]={0};
 	long Num_threads;
 	Nodo *Lista_Numeros=NULL;
-	Num_threads=strtol(argv[2],NULL,10);  //Numero de procesos solicitados por consola 
+	Num_threads=strtol(argv[2],NULL,10);  // Numero de hilos solicitados por consola 
 	ProgramError(Num_threads);
 	FILE *file=fopen(argv[1], "rt");
 	if (file==NULL){
-		perror("Error en la apertura del archivo");
+		perror("Error en la apertura del archivo.");
 		return 1;
 	}
 	while(!feof(file)&& i!=cuenta){
@@ -60,7 +69,6 @@ int main(int argc, char *argv[]){
 	}
 
 
-
 	pthread_t Master;
 	struct Parametros p;
 	p.Numero_Hilos=Num_threads;
@@ -69,14 +77,8 @@ int main(int argc, char *argv[]){
 	pthread_create(&Master,NULL, Crear_hilos,(void *)&p);
 	pthread_join(Master,NULL);
 
-
-
-
-
-
-
-
 }
+
 
 void *Crear_hilos(void *arg){
 	struct Parametros *p;
@@ -107,11 +109,8 @@ void *Crear_hilos(void *arg){
 	}
 	int Cantidad=0;
 	Cantidad=Tellme_lines("Primos.txt");
-	printf("La Cantidad de numeros primos es : %d\n", Cantidad);
+	printf("La cantidad de numeros primos es: %d\n", Cantidad);
 	remove("Primos.txt");
-
-	
-	
 	
 }
 
@@ -132,7 +131,7 @@ void *ComprobarNumeroPrimoHilo(void *arg){
 	if(i==s->Hilos-1){
 		int Numero_Primos=0;
 		Numero_Primos=ListaSize(&s->Lista_Primos);
-		Numero_Primos++;
+		/* Numero_Primos++; */
 		char texto[]="Primos.txt";
 		FILE *file=fopen(texto,"w");
 		if(file==NULL){
@@ -150,10 +149,6 @@ void *ComprobarNumeroPrimoHilo(void *arg){
 		}
 		
 	}
-
-
-
-
 
 }
 
@@ -182,20 +177,19 @@ int esPrimo(int numero) {
 
 void ProgramError(long x ){
 	if(x>=11|| x<=0){
-		printf("Entrada No valida, Asegurece de que el numero de procesos Este entre 1 y 10");
+		printf("Entrada no valida. Asegurese de que el numero de hilos este entre 1 y 10.");
 		exit(-1);
 	}
 	
 }
 
-int Tellme_lines(char *Archivo)
-{
+int Tellme_lines(char *Archivo){
 	char ca;
 	int count=0;
 
 	FILE *file=fopen(Archivo, "rt");    // abrimos el archivo en modo lectura
 		if (file==NULL){
-			perror("Error en la apertura del archivo");
+			perror("Error en la apertura del archivo.");
 		return 1;
 		}
 	

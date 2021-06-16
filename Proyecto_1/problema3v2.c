@@ -1,3 +1,12 @@
+/**
+ * @file Proyecto.c
+ * @author 	Jonathan Bautista 16-10109
+ * 		   		Daniela Ramirez 16-10940
+ * 		   		Gregory Mu;oz 16-11313
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 
 #include "Lista_Enlazada.c"
 
@@ -259,7 +268,7 @@ void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tar
 
 void ProgramError(long x ){
 	if(x>=11|| x<=0){
-		printf("Entrada No valida, Asegurece de que el numero de procesos Este entre 1 y 10");
+		printf("Entrada no valida. Asegurese de que el numero de procesos este entre 1 y 10.");
 		exit(-1);
 	}
 	

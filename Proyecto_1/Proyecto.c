@@ -1,12 +1,23 @@
+/**
+ * @file Proyecto.c
+ * @author 	Jonathan Bautista 16-10109
+ * 		   		Daniela Ramirez 16-10940
+ * 		   		Gregory Mu;oz 16-11313
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
+
 
 #include "Lista_Enlazada.c"
 
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include<sys/wait.h>
+#include <sys/wait.h>
 #include <pthread.h>
+#include <sys/time.h>
 
 int Tellme_lines(char *Archivo);
 int esPrimo(int numero);
@@ -16,13 +27,12 @@ void *Crear_hilos(void *arg);
 void *ImprimirNumeroPrimoHilo(void *arg);
 void inicializarProcesos(Nodo **Lista_Tareas, int Proceso,int Tareas);
 void ProgramError(long x );
+
 struct Parametros{
 	int Numero_Hilos;
 	int NumeroLineas;
 	Nodo *Lista_Numeros;
-
 };
-
 
 struct Parametros_{
 	int Hilo;
@@ -30,16 +40,25 @@ struct Parametros_{
 	Nodo *Lista_N;
 };
 
+struct timeval *t0, *t1;
 
-int main(int argc, char *argv[])
-{
+
+
+int main(int argc, char *argv[]){
+	
+	t0 = malloc(sizeof(struct timeval));
+	t1 = malloc(sizeof(struct timeval));
+
 	if(strcmp(argv[2],"-p")==0||strcmp(argv[2],"-P")==0){
+
+		gettimeofday(t0, NULL);
 
 		char ca;
 		int count=Tellme_lines(argv[1]);
 		int Numero=0;
 		int i=0;
 		long Num_process;
+
 		Nodo **a[10];  // arreglo de apuntadores donde iran el apuntador a conjuntos de lineas las culaes se les asignaran a los Procesos hijos por el padre.
 		Nodo *Lista_Numeros=NULL;  //Inicializa la lista de Numeros que seran comprobados.
 		Nodo *P0=NULL;
@@ -74,53 +93,58 @@ int main(int argc, char *argv[])
 		}
 		fclose(file);
 		Separacion_lineas(a,Num_process,count,&Lista_Numeros,&P0,&P1,&P2,&P3,&P4,&P5,&P6,&P7,&P8,&P9,&Lista_Tareas);
+
+		
 		int wpid;
 		pid_t	pid;
-		int N=Num_process;
-
+		int N=Num_process;		
+		
 		for(i=0;i<N;i++){
+
 			pid=fork();    //Se hace fork()
-			if(pid==0){		// si el proceso se crea bien, terminamos el ciclo for
+			if(pid==0){	   // si el proceso se crea bien, terminamos el ciclo for
 				break;
 
 			}else if(pid==-1){
-				perror("Herror al hacer fork()");
+				perror("Error al hacer fork()");
 				exit(1);
 				break;
+
 			}else{
 				EliminarInicio(&Lista_Tareas);
 				EliminarInicio(&Lista_Tareas);
 				sleep(1);
-
 			}
 		}
-		if(pid==0){
+		if(pid==0){			
 			int x=EliminarInicio(&Lista_Tareas);
 			int y=EliminarInicio(&Lista_Tareas);
 			Comprobar_Numero_Primo(a,x,y);
-		
-
+			
 			//printf("[son] pid %d from [parent] pid %d\n",getpid(),getppid());
-      exit(0);
+      	exit(0);
 
 		}
 		else{
 			for(int i=0;i<N;i++){
 				if((wpid=wait(NULL))>=0){
-
 				}
 			}
-			printf("Programa Termiando\n");
+			gettimeofday(t1, NULL);
+			unsigned int ut1 = t1->tv_sec*1000000+t1->tv_usec;
+			unsigned int ut0 = t0->tv_sec*1000000+t0->tv_usec;
+			printf("El tiempo de corrida es: %d microsegundos.\n", (ut1-ut0)/N); /* Tiempo medio en microsegundos */
+
+			printf("Programa termiando.\n");
 		}
-
-
-
-
       
 	}	
 
+
 	if(strcmp(argv[2],"-t")==0||strcmp(argv[2],"-T")==0){
-		
+
+		gettimeofday(t0, NULL);	
+
 		char ca;
 		int count=Tellme_lines(argv[1]);
 		int Numero=0;
@@ -132,7 +156,7 @@ int main(int argc, char *argv[])
 		ProgramError(Num_threads);
 		FILE *file=fopen(argv[1], "rt");
 		if (file==NULL){
-			perror("Error en la apertura del archivo");
+			perror("Error en la apertura del archivo.");
 		return 1;
 		}
 
@@ -148,39 +172,33 @@ int main(int argc, char *argv[])
 
 		}
 
-
 		pthread_t Master;
 		struct Parametros p;
 		p.Numero_Hilos=Num_threads;
 		p.Lista_Numeros=Lista_Numeros;
 		p.NumeroLineas=count;
-
+				
 		pthread_create(&Master,NULL, Crear_hilos,(void *)&p);
 		pthread_join(Master,NULL);
-
-
-
-
-
-
-
-
-
+		
 	}
 
-
 }
+
 
 
 void *Crear_hilos(void *arg){
 	struct Parametros *p;
 	p=(struct Parametros *)arg;
-	struct Parametros_ p1;
+	struct Parametros_ p1;		
 	int Tarea1=(p->NumeroLineas)/(p->Numero_Hilos);
 	int Tarea2=(p->NumeroLineas)/(p->Numero_Hilos)+(p->NumeroLineas)%(p->Numero_Hilos);
 	p1.Lista_N=p->Lista_Numeros;
 	pthread_t Worker;
+	double media = 0.0;	
+		
 	for(int i=0;i<p->Numero_Hilos;i++){
+			
 		if(i!=(p->Numero_Hilos-1)){
 		p1.Hilo=i;
 		p1.Tarea=Tarea1;
@@ -192,17 +210,18 @@ void *Crear_hilos(void *arg){
 		p1.Tarea=Tarea2;
 		pthread_create(&Worker,NULL,ImprimirNumeroPrimoHilo,(void *)&p1);
 		pthread_join(Worker,NULL);
-
-		}
-		
+		}		
 	}
-	printf("Programa Terminado\n");
 
-
-
-
+	gettimeofday(t1, NULL);		
+	unsigned int ut1 = t1->tv_sec*1000000+t1->tv_usec;
+	unsigned int ut0 = t0->tv_sec*1000000+t0->tv_usec;	
+	media += (ut1 - ut0);
+	printf("El tiempo de corrida es: %f microsegundos.\n", (media/p->Numero_Hilos)); /* Tiempo medio en microsegundos */	
+	printf("Programa terminado\n");
 
 }
+
 
 void *ImprimirNumeroPrimoHilo(void *arg){
 	struct Parametros_ *s;
@@ -217,6 +236,7 @@ void *ImprimirNumeroPrimoHilo(void *arg){
 	sprintf(texto1, "%d", i);
 	strcat(texto1,texto2);
 	FILE *file=fopen(texto1,"w");
+	
 	if(file==NULL){
 		perror("Error en la creacion del archivo \n\n");
 
@@ -235,9 +255,9 @@ void *ImprimirNumeroPrimoHilo(void *arg){
 			fclose(file);
 		}
 
-
-
 }
+
+
 
 int esPrimo(int numero) {
   if (numero == 0 || numero == 1){
@@ -261,8 +281,8 @@ int esPrimo(int numero) {
   return 1;
 }
 
-int Tellme_lines(char *Archivo)
-{
+
+int Tellme_lines(char *Archivo){
 	char ca;
 	int count=0;
 
@@ -287,6 +307,7 @@ int Tellme_lines(char *Archivo)
 
 		return count;
 }
+
 
 void Separacion_lineas(Nodo **a[10],int Num_process,int M,Nodo **Lista_Numeros,Nodo **P0, Nodo **P1,Nodo **P2,Nodo **P3,Nodo **P4,Nodo **P5,Nodo **P6,Nodo **P7,Nodo **P8,Nodo **P9,Nodo **Lista_Tareas){
 	a[0]=P0;
@@ -341,8 +362,7 @@ void Separacion_lineas(Nodo **a[10],int Num_process,int M,Nodo **Lista_Numeros,N
 }
 
 
-void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tareas)
-{	
+void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tareas){	
 	char Texto_completo[50];
 	char texto2[]=".txt";
 	char texto1[50];
@@ -371,12 +391,12 @@ void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tar
 			fclose(file);
 		}
 
-
-
 }
-void ProgramError(long x ){
+
+
+void ProgramError(long x){
 	if(x>=11|| x<=0){
-		printf("Entrada No valida, Asegurece de que el numero de procesos Este entre 1 y 10");
+		printf("Entrada no valida. Asegurese de que el numero de procesos este entre 1 y 10.");
 		exit(-1);
 	}
 	

@@ -1,3 +1,12 @@
+/**
+ * @file Proyecto.c
+ * @author 	Jonathan Bautista 16-10109
+ * 		   		Daniela Ramirez 16-10940
+ * 		   		Gregory Mu;oz 16-11313
+ * 
+ * @copyright Copyright (c) 2021
+ * 
+ */
 
 #include "Lista_Enlazada.c"
 

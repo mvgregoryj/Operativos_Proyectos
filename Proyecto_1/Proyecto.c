@@ -1,8 +1,8 @@
 /**
  * @file Proyecto.c
- * @author 	Jonathan Bautista 16-10109
- * 		   		Daniela Ramirez 16-10940
- * 		   		Gregory Mu;oz 16-11313
+ * @author Jonathan Bautista 16-10109
+ * 		   Daniela Ramirez 16-10940
+ * 		   Gregory Mu;oz 16-11313
  * 
  * @copyright Copyright (c) 2021
  * 
@@ -18,6 +18,8 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include <sys/time.h>
+
+/* Declaracion de variables y funciones */
 
 int Tellme_lines(char *Archivo);
 int esPrimo(int numero);
@@ -43,15 +45,20 @@ struct Parametros_{
 struct timeval *t0, *t1;
 
 
+/* Programa principal que se encarga de leer el archivo .txt 
+*  y crear procesos o hilos dependiendo de lo que se pase por 
+*  la terminal
+*/
 
 int main(int argc, char *argv[]){
 	
-	t0 = malloc(sizeof(struct timeval));
-	t1 = malloc(sizeof(struct timeval));
+	t0 = malloc(sizeof(struct timeval)); // Se inicializa la variable t0 para calcular el tiempo
+	t1 = malloc(sizeof(struct timeval)); // Se inicializa la variable t1 para calcular el tiempo
 
+	/* Si el usuario quiere crear procesos */
 	if(strcmp(argv[2],"-p")==0||strcmp(argv[2],"-P")==0){
 
-		gettimeofday(t0, NULL);
+		gettimeofday(t0, NULL); // Se obtiene el tiempo inicial
 
 		char ca;
 		int count=Tellme_lines(argv[1]);
@@ -71,7 +78,7 @@ int main(int argc, char *argv[]){
 		Nodo *P7=NULL;
 		Nodo *P8=NULL;
 		Nodo *P9=NULL;	
-		Nodo *Lista_Tareas=NULL;  // Inicializa Una lista donde estaran en cada Nodo la cantidad de tareas que realizara cada Proceso/Hilo.
+		Nodo *Lista_Tareas=NULL;  // Inicializa una lista donde estaran en cada Nodo la cantidad de tareas que realizara cada Proceso/Hilo.
 		Num_process=strtol(argv[3],NULL,10);  //Numero de procesos solicitados por consola 
 		ProgramError(Num_process);
 		FILE *file=fopen(argv[1], "rt");
@@ -130,20 +137,20 @@ int main(int argc, char *argv[]){
 				if((wpid=wait(NULL))>=0){
 				}
 			}
-			gettimeofday(t1, NULL);
+			gettimeofday(t1, NULL); // Se obtiene el tiempo final
 			unsigned int ut1 = t1->tv_sec*1000000+t1->tv_usec;
 			unsigned int ut0 = t0->tv_sec*1000000+t0->tv_usec;
-			printf("El tiempo de corrida es: %d microsegundos.\n", (ut1-ut0)/N); /* Tiempo medio en microsegundos */
+			printf("El tiempo de corrida es: %d microsegundos.\n", (ut1-ut0)); /* Tiempo de ejecucion en microsegundos */
 
-			printf("Programa termiando.\n");
+			printf("Programa terminado.\n");
 		}
       
 	}	
 
-
+	/* Si el usuario quiere crear hilos*/
 	if(strcmp(argv[2],"-t")==0||strcmp(argv[2],"-T")==0){
 
-		gettimeofday(t0, NULL);	
+		gettimeofday(t0, NULL);	// Se obtiene el tiempo inicial
 
 		char ca;
 		int count=Tellme_lines(argv[1]);
@@ -152,7 +159,7 @@ int main(int argc, char *argv[]){
 		long Num_threads;
 		Nodo *Lista_Numeros=NULL;
 		Nodo *Lista_Tareas=NULL;
-		Num_threads=strtol(argv[3],NULL,10);  //Numero de procesos solicitados por consola 
+		Num_threads=strtol(argv[3],NULL,10);  //Numero de hilos solicitados por consola 
 		ProgramError(Num_threads);
 		FILE *file=fopen(argv[1], "rt");
 		if (file==NULL){
@@ -178,25 +185,25 @@ int main(int argc, char *argv[]){
 		p.Lista_Numeros=Lista_Numeros;
 		p.NumeroLineas=count;
 				
-		pthread_create(&Master,NULL, Crear_hilos,(void *)&p);
-		pthread_join(Master,NULL);
+		pthread_create(&Master,NULL, Crear_hilos,(void *)&p); // Creacion del hilo maestro
+		pthread_join(Master,NULL); // El hilo maestro espera a que terminen los hilos trabajadores
 		
 	}
 
 }
 
 
+/* Funcion para crear los hilos hijos */
 
 void *Crear_hilos(void *arg){
 	struct Parametros *p;
 	p=(struct Parametros *)arg;
 	struct Parametros_ p1;		
-	int Tarea1=(p->NumeroLineas)/(p->Numero_Hilos);
-	int Tarea2=(p->NumeroLineas)/(p->Numero_Hilos)+(p->NumeroLineas)%(p->Numero_Hilos);
+	int Tarea1=(p->NumeroLineas)/(p->Numero_Hilos); // Cantidad de lineas que se le asignara a los hilos trabajadores 
+	int Tarea2=(p->NumeroLineas)/(p->Numero_Hilos)+(p->NumeroLineas)%(p->Numero_Hilos); // Cantidad de lineas que se le asignara al maestro
 	p1.Lista_N=p->Lista_Numeros;
 	pthread_t Worker;
-	double media = 0.0;	
-		
+			
 	for(int i=0;i<p->Numero_Hilos;i++){
 			
 		if(i!=(p->Numero_Hilos-1)){
@@ -213,15 +220,20 @@ void *Crear_hilos(void *arg){
 		}		
 	}
 
-	gettimeofday(t1, NULL);		
+	gettimeofday(t1, NULL); // Se obtiene el tiempo final
 	unsigned int ut1 = t1->tv_sec*1000000+t1->tv_usec;
 	unsigned int ut0 = t0->tv_sec*1000000+t0->tv_usec;	
-	media += (ut1 - ut0);
-	printf("El tiempo de corrida es: %f microsegundos.\n", (media/p->Numero_Hilos)); /* Tiempo medio en microsegundos */	
-	printf("Programa terminado\n");
+	printf("El tiempo de corrida es: %d microsegundos.\n", (ut1 - ut0)); /* Tiempo de ejecucion en microsegundos */	
+	printf("Programa terminado.\n");
 
 }
 
+
+/* Funcion que se encarga de imprimir los numeros del archivo de entrada 
+*  en un nuevo archivo i.txt donde i es el numero del trabajador, 
+*  tal que 0 =< i < 10. En el nuevo archivo, si al lado del numero aparece un 1 
+*  el numero es primo, si aparece un 0 no es primo. Para Hilos
+*/
 
 void *ImprimirNumeroPrimoHilo(void *arg){
 	struct Parametros_ *s;
@@ -258,56 +270,9 @@ void *ImprimirNumeroPrimoHilo(void *arg){
 }
 
 
-
-int esPrimo(int numero) {
-  if (numero == 0 || numero == 1){
-
-  	return 0;
-  }
-  /*
-          El número 4 es un caso especial, pues al dividirlo entre
-          2 el resultado es 2, y el ciclo nunca se cumple, indicando que
-          el 4 SÍ es primo, pero realmente NO lo es, así que si el número es 4
-                        inmediatamente indicamos que no es primo (regresando 0)
-          Nota: solo es para el 4, los demás funcionan bien
-  */
-  if (numero == 4) return 0;
-  for (int x = 2; x < numero / 2; x++) {
-    // Si es divisible por cualquiera de estos números, no
-    // es primo
-    if (numero % x == 0) return 0;
-  }
-  // Si no se pudo dividir por ninguno de los de arriba, sí es primo
-  return 1;
-}
-
-
-int Tellme_lines(char *Archivo){
-	char ca;
-	int count=0;
-
-	FILE *file=fopen(Archivo, "rt");    // abrimos el archivo en modo lectura
-		if (file==NULL){
-			perror("Error en la apertura del archivo");
-		return 1;
-		}
-	
-		while(1){
-			 ca = fgetc(file);
-
-      	  if(ca == '\n'){
-        	    count=count+1;
-        	}
-        	if(ca == EOF){  //Si el caracter es end of file imprimimos el contador y salimos del while
-          	  break;
-        	}
-
-		}
-		fclose(file);
-
-		return count;
-}
-
+/* Funcion que separa en un arreglo de listas la lista de numeros que le toca a cada proceso. 
+*  El indice de cada casilla del arreglo es el proceso.
+*/
 
 void Separacion_lineas(Nodo **a[10],int Num_process,int M,Nodo **Lista_Numeros,Nodo **P0, Nodo **P1,Nodo **P2,Nodo **P3,Nodo **P4,Nodo **P5,Nodo **P6,Nodo **P7,Nodo **P8,Nodo **P9,Nodo **Lista_Tareas){
 	a[0]=P0;
@@ -362,6 +327,12 @@ void Separacion_lineas(Nodo **a[10],int Num_process,int M,Nodo **Lista_Numeros,N
 }
 
 
+/* Funcion que se encarga de imprimir los numeros del archivo de entrada 
+*  en un nuevo archivo i.txt donde i es el numero del trabajador, 
+*  tal que 0 =< i < 10. En el nuevo archivo, si al lado del numero aparece un 1 
+*  el numero es primo, si aparece un 0 no es primo. Para procesos.
+*/
+
 void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tareas){	
 	char Texto_completo[50];
 	char texto2[]=".txt";
@@ -394,9 +365,68 @@ void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_de_Tar
 }
 
 
+/* Funcion que se encarga de contar las lineas del archivo de entrada. */
+
+int Tellme_lines(char *Archivo){
+	char ca;
+	int count=0;
+
+	FILE *file=fopen(Archivo, "rt");    // abrimos el archivo en modo lectura
+		if (file==NULL){
+			perror("Error en la apertura del archivo");
+		return 1;
+		}
+	
+		while(1){
+			 ca = fgetc(file);
+
+      	  if(ca == '\n'){
+        	    count=count+1;
+        	}
+        	if(ca == EOF){  //Si el caracter es end of file imprimimos el contador y salimos del while
+          	  break;
+        	}
+
+		}
+		fclose(file);
+
+		return count;
+}
+
+
+/* Funcion que comprueba si un numero es primo o no */
+
+int esPrimo(int numero) {
+  if (numero == 0 || numero == 1){
+
+  	return 0;
+  }
+  /*
+          El número 4 es un caso especial, pues al dividirlo entre
+          2 el resultado es 2, y el ciclo nunca se cumple, indicando que
+          el 4 SÍ es primo, pero realmente NO lo es, así que si el número es 4
+                        inmediatamente indicamos que no es primo (regresando 0)
+          Nota: solo es para el 4, los demás funcionan bien
+  */
+  if (numero == 4) return 0;
+  for (int x = 2; x < numero / 2; x++) {
+    // Si es divisible por cualquiera de estos números, no
+    // es primo
+    if (numero % x == 0) return 0;
+  }
+  // Si no se pudo dividir por ninguno de los de arriba, sí es primo
+  return 1;
+}
+
+
+/* Funcion para que el usuario cumpla con la condicion de que ingrese
+*  la cantidad correcta de procesos o hilos a crear en caso de que solicite
+*  mas de 10 hilos/procesos o menos de 1 
+*/
+
 void ProgramError(long x){
 	if(x>=11|| x<=0){
-		printf("Entrada no valida. Asegurese de que el numero de procesos este entre 1 y 10.");
+		printf("Entrada no valida. Asegurese de que el numero de procesos o hilos este entre 1 y 10.");
 		exit(-1);
 	}
 	

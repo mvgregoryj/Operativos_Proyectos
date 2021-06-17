@@ -24,6 +24,8 @@ void Separacion_lineas(Nodo **a[],int Num_process,int M,Nodo **Lista_Numeros,Nod
 void Comprobar_Numero_Primo(Nodo **a[], int Numero_de_proceso, int Numero_Tareas);
 void inicializarProcesos(Nodo **Lista_Tareas, int Proceso,int Tareas);
 void ProgramError(long x );
+int PidProcesoPadre;
+
 
 struct Parametros{
 	int Numero_Hilos;
@@ -41,7 +43,10 @@ struct Parametros_{
 void sigintHandler(int sig_num)
 {
 	signal(SIGINT, sigintHandler);
-	printf("\nI’m sorry Dave. I’m afraid I can’t do that.\n");
+	if(getpid() == PidProcesoPadre){
+		//printf("\n%d\n", getpid());
+		printf("\nI’m sorry Dave. I’m afraid I can’t do that.\n");
+	}
 	fflush(stdout);
 }
 
@@ -95,6 +100,7 @@ int main(int argc, char *argv[])
 		int N=Num_process;
 
 		for(i=0;i<N;i++){
+			PidProcesoPadre = getpid();
 			pid=fork();    //Se hace fork()
 			if(pid==0){		// si el proceso se crea bien, terminamos el ciclo for
 				break;
@@ -126,7 +132,7 @@ int main(int argc, char *argv[])
 
 				}
 			}
-			printf("Programa Termiando\n");
+			printf("Programa Terminado.\n");
 		}
 	}	
 }

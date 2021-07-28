@@ -15,7 +15,7 @@ void ImprimirMundo(int **Mundo, int filas, int columnas);
 int ** Generar_Mundo(char * Archivo, int filas, int columnas);
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo);
 void Imprimir(int ** ma, int nfilas, int ncol);
-void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *archivo);
+void juego(int Num_process, int filas, int columnas, char *archivo);
 
 
 int main(int argc, char *argv[] ){
@@ -51,13 +51,13 @@ int main(int argc, char *argv[] ){
 	}
 	fclose(file);
 
-	juego(Num_process,filas,columnas,Numero_lineas,argv[4]);
+	juego(Num_process,filas,columnas,argv[4]);
 	
 
 }
 
 
-void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *archivo){
+void juego(int Num_process, int filas, int columnas, char *archivo){
 
 	// Esto es lo que he hecho
 	
@@ -65,7 +65,7 @@ void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *ar
 	int pipes_secundario[Num_process-1][2];
 	int pids[Num_process];
 	int **Mundito[Num_process];
-	int nlineas = Numero_lineas/Num_process;
+	int nlineas = (filas/Num_process);
 
 	for(int i=0; i<Num_process; i++){
 		if(pipe(pipes_primario[i]) == -1){
@@ -87,15 +87,9 @@ void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *ar
 		if (pids[i] == 0){
 			//Proceso hijo
 			printf("proceso: %d\n", i);
-			if(i == 0){
-				Mundito[i] = LeerArchivoProceso(filas,columnas,Num_process,i,nlineas,archivo);
-				Imprimir(Mundito[i],filas,columnas);
-			}
-			else{
-				Mundito[i] = LeerArchivoProceso(filas,columnas,Num_process,i,nlineas,archivo);
-				Imprimir(Mundito[i],filas,columnas);
-
-			}
+			Mundito[i] = LeerArchivoProceso(filas,columnas,Num_process,i,nlineas,archivo);
+			Imprimir(Mundito[i],filas,columnas);
+						
 			
 			for(int j=0; j<Num_process;j++){
 
@@ -222,7 +216,7 @@ int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int P
 	while(feof(flujo)==0){  // Se va iterando sobre las lineas del archivo hasta llegar a la primera linea del proceso en cuestion, luego cada linea se pasa a entero 
 		if(i==Empiezo_desde){   // y se va guardando en orden en la lista enlazada
 			while(xx<cantidad_de_lineas){
-				fgets(linea,100,flujo);
+				fgets(linea,cantidad_de_lineas*columnas,flujo);
 				ii=0;
 				while(linea[ii]!='\0'){
 					if(ii%2==0){

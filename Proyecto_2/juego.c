@@ -15,6 +15,7 @@ void ImprimirMundo(int **Mundo, int filas, int columnas);
 int ** Generar_Mundo(char * Archivo, int filas, int columnas);
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo);
 void Imprimir(int ** ma, int nfilas, int ncol);
+void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *archivo);
 
 
 int main(int argc, char *argv[] ){
@@ -32,11 +33,11 @@ int main(int argc, char *argv[] ){
 
 	printf("%d\n",Numero_lineas);
 
-
 	FILE *file=fopen(argv[4],"rt");
 	if (file==NULL){
 		perror("Error en la apertura del archivo");
 	}
+	
 	int filas;
 	int columnas;
 	for(int i=0;i<2;i++){
@@ -50,55 +51,130 @@ int main(int argc, char *argv[] ){
 	}
 	fclose(file);
 
+	juego(Num_process,filas,columnas,Numero_lineas,argv[4]);
+	
 
-	int **Mundo;
+}
 
-	//Mundo = Generar_Mundo(argv[4], filas , columnas);
- 
-	//Imprimir(Mundo,filas,columnas);
 
-// Esto es lo que he hecho
-	int pipes[Num_process-1][2];
+void juego(int Num_process, int filas, int columnas, int Numero_lineas, char *archivo){
+
+	// Esto es lo que he hecho
+	
+	int pipes_primario[Num_process-1][2];
+	int pipes_secundario[Num_process-1][2];
 	int pids[Num_process];
+	int **Mundito[Num_process];
+	int nlineas = Numero_lineas/Num_process;
 
-	for(int i=0; i<Num_process-1; i++){
-		if(pipe(pipes[i]) == -1){
-			printf("Error creando el pipe.")
+	for(int i=0; i<Num_process; i++){
+		if(pipe(pipes_primario[i]) == -1){
+			printf("Error creando el pipe.");
+		}
+		if(pipe(pipes_secundario[i]) == -1){
+			printf("Error creando el pipe.");
 		}
 	}
-	
+
 	for (int i=0; i<Num_process; i++){
+		
 		pids[i] = fork();
+
 		if(pids[i] == -1){
-			printf("Error creando el proceso.")
+			printf("Error creando el proceso.");
 		}
+
 		if (pids[i] == 0){
 			//Proceso hijo
-			for(int j=0; j<Num_process-1;j++){
+			printf("proceso: %d\n", i);
+			if(i == 0){
+				Mundito[i] = LeerArchivoProceso(filas,columnas,Num_process,i,nlineas,archivo);
+				Imprimir(Mundito[i],filas,columnas);
+			}
+			else{
+				Mundito[i] = LeerArchivoProceso(filas,columnas,Num_process,i,nlineas,archivo);
+				Imprimir(Mundito[i],filas,columnas);
+
+			}
+			
+			for(int j=0; j<Num_process;j++){
+
 				if(i != j){
-					close(pipes[j][0]);
+					close(pipes_primario[j][0]);
+					close(pipes_secundario[j][0]);
 				}
-				if (i+1 != j){
-					close(pipes[j][1]);
+
+				if(i+1 != j){
+					close(pipes_secundario[j][1]);
+				}
+
+				if(i-1 != j){
+					close(pipes_primario[j][1]);
 				}
 			}
 
+			if(i == 0){
+				close(pipes_secundario[0][0]);
+			}
 
+			if(i == Num_process-1){
+				close(pipes_primario[0][0]);
+			}
 
+			/**
+			int x;
+			if(i<Num_process-1){
+				if(read(pipes_primario[i][0],&x,sizeof(int)) == -1){
+					printf("Error leyendo\n");
+				}
+			}
+
+			if(i>0){
+				if(read(pipes_secundario[i][0],&x,sizeof(int)) == -1){
+					printf("Error leyendo\n");
+				}
+			}
+
+			//printf("Se obtiene %d\n", x);
+
+			//x++;
+
+			if(i<Num_process-1){
+				if(write(pipes_secundario[i+1][1],&x,sizeof(int)) == -1){
+					printf("Error escribiendo\n");
+				}
+			}
+
+			if(i>0){
+				if(write(pipes_primario[i-1][1],&x,sizeof(int)) == -1){
+					printf("Error escribiendo\n");
+				}
+			}
+			//printf("Se envia %d\n", x);*/
+
+			return;
 		}
+		
+	}
+/*
+	int y = 5;
+	//printf("Main process sent %d\n", y);
+	if(write(pipes_secundario[0][1], &y, sizeof(int))==-1){
+		printf("Error al escribir\n");
 	}
 
+	if(read(pipes_secundario[Num_process][0], &y, sizeof(int))==-1){
+		printf("Error al escribir\n");
+	}
+
+	printf("Resultado final %d\n", y);*/
+	
 	for (int i=0; i<Num_process; i++){
 		wait(NULL);
 	}
 
 
-
-
-	
-
 }
-
 
 /** Funcion para imprimir la matriz */
 void Imprimir(int ** ma, int nfilas, int ncol){
@@ -130,13 +206,13 @@ y luego se guardan en un sub-arreglo bidimensional*/
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo){
 	int i=-2;
 	int j=0;
-	int Empiezo_desde=Proceso*(filas/numero_de_procesos); //Multiplicamos el proceso por la cantidad de lineas que le tocan para saber desde donde empeiza a guardar las lineas
+	int Empiezo_desde=Proceso*(filas/numero_de_procesos); //Multiplicamos el proceso por la cantidad de lineas que le tocan para saber desde donde empieza a guardar las lineas
 	int** parte_mundo;
 	Nodo *Lista_lineas=NULL;
 
 	FILE *flujo=fopen(Archivo,"rt"); // Abrimos el archivo en modo lectura 
 	if (flujo==NULL){
-		perror("Error en l apertura de larchivo");
+		perror("Error en la apertura de larchivo");
 	}
 	char linea[100];
 	char basura[100];

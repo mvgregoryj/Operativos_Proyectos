@@ -12,6 +12,8 @@ void ImprimirMundo(int **Mundo, int filas, int columnas);
 int ** Generar_Mundo(char * Archivo, int filas, int columnas);
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo);
 void Imprimir(int ** ma, int nfilas, int ncol);
+void PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo);
+Nodo *TraducirMensaje(char *mensaje,int ncol);
 
 
 int main(int argc, char *argv[] ){
@@ -47,12 +49,35 @@ int main(int argc, char *argv[] ){
 		
 	}
 	fclose(file);
-	int **Mundo;
+	int pipe_primario[Num_process-1][2];
+	int pipe_segundario[Num_process-1][2];
+	int k=0;
+	pid_t *pids=malloc(sizeof(pid_t) * Num_process);
 
+	for(int x=0;x<Num_process-1;x++){
+			pipe(pipe_primario[x]);
+			pipe(pipe_segundario[x]);
+			pipe(pipe_terciario[x]);
 
-	Mundo=Generar_Mundo(argv[4], filas , columnas);
+	}
+	int **parte_mundo;
+	for (int i = 0; i < Num_process; ++i){
+		pid_t pid=fork();
+		if(pid==0 && k==0){
+			parte_mundo=PrimerTrabajo(i,filas,columnas,Num_process,argv[4]);
+			printf("\n");
+			return 0;
+			
+		}
+		pids[i]=pid;
+	
+	}
+	for (int i = 0; i < Num_process; i++) {
+        waitpid(pids[i], NULL, 0);
+    }
 
-	Imprimir(Mundo,filas,columnas);
+}
+
 
 	//int** mini_mundo=LeerArchivoProceso(20, 20,10,9,2,argv[4]);
 
@@ -61,6 +86,48 @@ int main(int argc, char *argv[] ){
 		//	printf("%d\n",mini_mundo[i][j]);
 		//}
 	//}
+
+Nodo *TraducirMensaje(char *mensaje,int ncol){
+	Nodo *lista_numeros=NULL;
+	int numero;
+	int i=0;
+	while(i<ncol){
+		numero=mensaje[i]-'0';
+		if(i==0){
+			InsertarInicio(&lista_numeros,numero);
+			i++;
+		}
+		if (i!=0){
+			InsertarFinal(&lista_numeros,numero);
+			i++;
+		}
+	}
+	return lista_numeros;
+
+}
+
+
+
+
+int **PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo){
+	int Cantidad_trabajo;
+	int **parte_mundo;
+	if(Proceso!=numero_de_procesos-1){
+		Cantidad_trabajo=filas/numero_de_procesos;
+		parte_mundo=LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
+		return parte_mundo;
+
+		
+
+	}
+
+	if(Proceso==numero_de_procesos-1){
+		Cantidad_trabajo=filas/numero_de_procesos+(filas%numero_de_procesos);
+		parte_mundo=LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
+		return parte_mundo;
+
+	}
+
 
 }
 

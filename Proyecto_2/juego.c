@@ -87,6 +87,55 @@ int main(int argc, char *argv[] ){
 		//}
 	//}
 
+int **LeerPipe(int i, int Num_process,int ncol){
+	int * linea_vecina1=(int*)malloc(ncol*sizeof(int));
+	int * linea_vecina2=(int*)malloc(ncol*sizeof(int));
+	char mensaje1[500];
+	char mensaje2[500];
+	if(i%2==0 && i==0){
+		read(pipe_segundario[i][0],mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//linea_vecina=mesnaje traducido;
+		return linea_vecina1;
+	}
+	if(i%2==0 && i==Num_process-1){
+		read(pipe_primario[i-1][0], mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//linea_vecina=mesnaje traducido;
+		return linea_vecina1;
+	}
+	if(i%2!=0 && i==Num_process-1){
+		read(pipe_segundario[i-1][0], mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//linea_vecina=mesnaje traducido;
+		return linea_vecina1;
+	}
+
+	if(i%2==0 && i!=0 &i!=Num_process-1){
+		read(pipe_segundario[i-1][0], mensaje1,sizeof(mensaje1));
+		read(pipe_segundario[i][0], mensaje2,sizeof(mensaje2));
+		//Traducir mensaje1 a int *
+		//linea_vecina=mesnaje1 traducido;
+		//Traducir mensaje2 a int *
+		//linea_vecina=mesnaje traducido;
+		
+		return linea_vecina1; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
+	}
+	if(i%2!=0 && i!=Num_process-1){
+		read(pipe_primario[i-1][0], mensaje1,sizeof(mensaje1));
+		read(pipe_primario[i][0], mensaje2,sizeof(mensaje2));
+		//Traducir mensaje1 a int *
+		//linea_vecina=mesnaje1 traducido;
+		//Traducir mensaje2 a int *
+		//linea_vecina=mesnaje traducido;
+		
+		return linea_vecina1; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
+	}
+
+}
+
+
+
 Nodo *TraducirMensaje(char *mensaje,int ncol){
 	Nodo *lista_numeros=NULL;
 	int numero;

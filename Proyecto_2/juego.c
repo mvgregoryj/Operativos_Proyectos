@@ -15,9 +15,12 @@ void ImprimirMundo(int **Mundo, int filas, int columnas);
 int ** Generar_Mundo(char * Archivo, int filas, int columnas);
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int filas_corresp_proceso_i, char *Archivo);
 void Imprimir(int ** ma, int nfilas, int ncol);
-void juego(int Num_process, int filas, int columnas, char *archivo);
+void juego(int Num_process, int n_generaciones, int n_visualizaciones, int filas, int columnas, char *archivo);
 
-int ** gameOfLife(int filas, int columnas, int Matriz);
+int ** gameOfLife(int filas, int columnas, int **Matriz);
+
+void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones);
+
 
 
 
@@ -58,13 +61,13 @@ int main(int argc, char *argv[] ){
 	printf("Columnas: %d\n", columnas);
 
 
-	juego(Num_process,filas,columnas,argv[4]);
-	
+	juego(Num_process, Num_generaciones, Num_visualizaciones, filas, columnas, argv[4]);
+
 
 }
 
 
-void juego(int Num_process, int filas, int columnas, char *archivo){
+void juego(int Num_process, int n_generaciones, int n_visualizaciones, int filas, int columnas, char *archivo){
 
 	// Esto es lo que he hecho
 	/*
@@ -177,31 +180,36 @@ void juego(int Num_process, int filas, int columnas, char *archivo){
 
 	*/
 
-/////////// PROBANDO FUNCION DE KOMI /////////////
+	/////////// PROBANDO FUNCION DE KOMI /////////////
 	int **Mundito[Num_process];
 	int filas_por_proceso = (filas/Num_process);
 
 	Mundito[0] = LeerArchivoProceso(filas,columnas,Num_process,0,filas_por_proceso, archivo);
+
+	printf("Matriz inicial: \n");
+
 	Imprimir(Mundito[0],filas,columnas);
 
 	printf("\n\n");
 
-	Imprimir(gameOfLife(filas, columnas, Mundito[0]), filas, columnas);
+	//printf("Matriz gameOfLife:\n");
 
+	//Imprimir(gameOfLife(filas, columnas, Mundito[0]), filas, columnas);
 
-
-
-
+	generaciones(filas, columnas, Mundito[0], n_generaciones, n_visualizaciones);
 
 }
 
 /* Funcion del Jugo de la vida*/
-int ** gameOfLife(int filasM, int columnasN, int **Matriz){
+int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
 
     //Declaro las variables que necesitamos
-    int **nextGen = (int **)malloc(filasM * sizeof(int *));
-    for (int j = 0; j < columnasN; j++)
-    	nextGen[j] = (int **)malloc(columnasN * sizeof(int *));
+    int** nextGen;
+
+    nextGen = (int **)malloc(filasM*sizeof(int*));
+    for (int i = 0; i < filasM; i++){
+    	nextGen[i] = (int*)malloc(columnasN*sizeof(int));
+    }
 
     //Instrucciones para retornar la siguiente generación
 
@@ -210,6 +218,8 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
 
     	// Recorrido de columnas
     	for (int j = 0; j < columnasN; j++){
+
+    		//	printf("i=%d , j=%d\n",i,j);
 
     		int vecinosVivos = 0;
 
@@ -250,7 +260,45 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
 	    		}
     		}
 
-    		// Caso 2: Borde izquierdo sin ser esquina
+    		// Caso 2: Borde inferior
+    		else if (i == filasM - 1){
+
+    			//printf("Borde Inferior\n");
+
+
+    			// Caso 2.1: Esquina inferior izquierda
+    			if(j == 0){
+	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+					vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1];
+    			}
+
+    			// Caso 2.2: Esquina inferior derecha
+    			else if(j == columnasN - 1){
+	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+					vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1];
+    			}
+
+    			// Caso 2.3: Borde inferior
+    			else{
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 0; x++){
+
+			    		for (int y = -1; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+    		}
+
+    		// Caso 3: Borde izquierdo sin ser esquina
     		else if((i != 0 || i != filasM - 1) && j == 0){
 	    		// Verifica estado de los 5 vecinos
 	    		for (int x = -1; x <= 1; x++){
@@ -269,7 +317,7 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
 	    		}
     		}
 
-    		// Caso 3: Borde derecho sin ser esquina
+    		// Caso 4: Borde derecho sin ser esquina
     		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
 	    		// Verifica estado de los 5 vecinos
 	    		for (int x = -1; x <= 1; x++){
@@ -284,41 +332,6 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
 		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
 	    				vecinosVivos += Matriz[i + x][j + y];
 
-		    		}
-	    		}
-    		}
-
-    		// Caso 4: Borde inferior
-    		else if (i == filasM - 1){
-
-    			// Caso 4.1: Esquina inferior izquierda
-    			if(j == 0){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1];
-    			}
-
-    			// Caso 4.2: Esquina inferior derecha
-    			else if(j == columnasN - 1){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1];
-    			}
-
-    			// Caso 4.3: Borde inferior
-    			else{
-		    		// Verifica estado de los 5 vecinos
-		    		for (int x = -1; x <= 0; x++){
-
-			    		for (int y = -1; y <= 1; y++){
-
-			    			// Se omite contarse a si mismo como vecino
-			    			if (x == 0 && y == 0){
-			    				continue;
-			    			}
-
-			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-		    				vecinosVivos += Matriz[i + x][j + y];
-
-			    		}
 		    		}
 	    		}
     		}
@@ -341,13 +354,25 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
 		    		}
 	    		}
 	    	}
+	    	
 
     		// Reglas del juego
 
     		// 1. Nacimiento: Célula muerta con exactamente 3 vecinos vivos se convierte en célula viva
     		if (Matriz[i][j] == 0 && vecinosVivos == 3){
     			nextGen[i][j] = 1;
+
+    			/*
+	    		printf("Matriz[%d][%d]=%d",i,j,Matriz[i][j]);
+	    		printf("\n");
+
+	    		printf("Nacimiento:\n");
+	    		printf("nextGen[%d][%d]=%d",i,j,nextGen[i][j]);
+	    		printf("\n");
+	    		*/
+
     		}
+
 
     		// 2. Supervivencia: Célula viva con 2 o 3 vecinos vivos permanece viva.
     		else if (Matriz[i][j] == 1 && (vecinosVivos == 2 || vecinosVivos == 3)){
@@ -358,14 +383,42 @@ int ** gameOfLife(int filasM, int columnasN, int **Matriz){
     		else{
     			nextGen[i][j] = 0;
     		}
-
-
-    	}
+    	}    	
     }
+
+	// Imprimir (nexGen, filasM, columnasN);
 
 
     // Retornamos la matriz nueva
     return nextGen;
+}
+
+/* Funcion para imprimir la generaciones */
+void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones){
+
+	int **Generaciones[n_generaciones]; 	// Arreglo donde se almacenaran las generaciones
+	int cantidadParaImprimir = n_generaciones/n_visualizaciones + n_generaciones%n_visualizaciones;
+
+	// Iteraciones para almacenar las generaciones el el arreglo
+	for (int i = 0; i < n_generaciones; ++i){
+
+		//Si es la 1ra generación
+		if (i==0){
+			Generaciones[i] = Matriz;
+		}
+		// Si no es la 1ra generación
+		else{
+			Generaciones[i] = gameOfLife(filasM, columnasN, Generaciones[i-1]);
+		}
+	}
+
+	// Iteraciones para imprimir las generaciones cada n_visualizaciones
+	for (int i = 0; i < cantidadParaImprimir; i++){
+		
+		printf("Generación %d: \n", i*n_visualizaciones);
+
+		Imprimir(Generaciones[i*n_visualizaciones], filasM, columnasN);
+	}
 }
 
 

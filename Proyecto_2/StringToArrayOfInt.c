@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+int ncol=9;
+
 // Funcion que transforma String en Array de Enteros
 int * StringToArrayOfInt(char* str){
 
@@ -23,6 +25,20 @@ int * StringToArrayOfInt(char* str){
 	return ArrayTemp;
 }
 
+
+char * ArrayOfInt2String(int *array, int ncol){
+	
+	char * temp;
+	temp = malloc(sizeof(char)*1000);
+
+	for(int i=0; i<ncol; i++){
+		sprintf(&temp[i], "%d", array[i]);
+	}
+
+	return temp;
+}
+
+
 int main(){
 
 	char str[] = "123456789";
@@ -36,5 +52,10 @@ int main(){
 	for (int i = 0; i < sizeString; ++i){
 		printf("ArrayTemp[%d] = %d\n", i, ArrayTemp[i] );
 	}
+
+	//Uso la funcion de array to string
+	char *cadena = ArrayOfInt2String(ArrayTemp,ncol);
+	printf("StringTemp: %s\n", cadena);
+
 
 }

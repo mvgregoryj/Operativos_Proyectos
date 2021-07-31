@@ -594,6 +594,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
     return nextGen;
 }
 
+
 /* Funcion para imprimir la generaciones */
 void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones){
 

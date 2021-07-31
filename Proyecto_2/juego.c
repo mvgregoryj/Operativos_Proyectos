@@ -201,7 +201,7 @@ void juego(int Num_process, int n_generaciones, int n_visualizaciones, int filas
 }
 
 /* Funcion del Jugo de la vida*/
-int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
+int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, int *partesMundo2, int procesosTotales, int proceso){
 
     //Declaro las variables que necesitamos
     int** nextGen;
@@ -223,27 +223,130 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
 
     		int vecinosVivos = 0;
 
-    		// Casos de casillas:
+    		// Casos por cantidad de procesos
 
-    		// Caso 1: Borde superior
-    		if (i == 0){
+    		// Caso 1: Nos encontramos en el 1er proceso y existen más de 1 procesosTotales
+    		if (proceso == 1 && proceso < procesosTotales){
 
-    			// Caso 1.1: Esquina superior izquierda
-    			if(j == 0){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
-    			}
+	    		// Casos de casillas:
 
-    			// Caso 1.2: Esquina superior derecha
-    			else if(j == columnasN - 1){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
-    			}
+	    		// Caso 1.1: Borde superior
+	    		if (i == 0){
 
-    			// Caso 1.3: Borde superior
-    			else{
+	    			// Caso 1.1.1: Esquina superior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
+	    			}
+
+	    			// Caso 1.1.2: Esquina superior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
+	    			}
+
+	    			// Caso 1.1.3: Borde superior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = 0; x <= 1; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 1.2: Borde inferior
+	    		else if (i == filasM - 1){
+
+	    			//printf("Borde Inferior\n");
+
+
+	    			// Caso 1.2.1: Esquina inferior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1] + partesMundo2[j] + partesMundo2[j+1];
+	    			}
+
+	    			// Caso 1.2.2: Esquina inferior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1] + partesMundo2[j-1] + partesMundo2[j];
+	    			}
+
+	    			// Caso 1.2.3: Borde inferior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = -1; x <= 0; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+
+			    		vecinosVivos = vecinosVivos + partesMundo2[j-1] + partesMundo2[j] + partesMundo2[j+1];
+		    		}
+	    		}
+
+	    		// Caso 1.3: Borde izquierdo sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == 0){
 		    		// Verifica estado de los 5 vecinos
-		    		for (int x = 0; x <= 1; x++){
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = 0; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 1.4: Borde derecho sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 0; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 1.5: Casilla no esta en ningun extremo o borde
+	    		else{
+		    		// Verifica estado de los 8 vecinos
+		    		for (int x = -1; x <= 1; x++){
 
 			    		for (int y = -1; y <= 1; y++){
 
@@ -257,31 +360,132 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
 
 			    		}
 		    		}
-	    		}
+		    	}
     		}
 
-    		// Caso 2: Borde inferior
-    		else if (i == filasM - 1){
+    		// Caso 2: Nos encontramos en un proceso medio
+    		else if (1 < proceso < procesosTotales){
 
-    			//printf("Borde Inferior\n");
+	    		// Casos de casillas:
+
+	    		// Caso 2.1: Borde superior
+	    		if (i == 0){
+
+	    			// Caso 2.1.1: Esquina superior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = partesMundo1[j] + partesMundo1[j+1] + Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
+	    			}
+
+	    			// Caso 2.1.2: Esquina superior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = partesMundo1[j-1] + partesMundo1[j] + Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
+	    			}
+
+	    			// Caso 2.1.3: Borde superior sin ser esquina sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = 0; x <= 1; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+			    		vecinosVivos = vecinosVivos + partesMundo1[j-1] + partesMundo1[j] + partesMundo1[j+1];
+		    		}
+	    		}
+
+	    		// Caso 2.2: Borde inferior
+	    		else if (i == filasM - 1){
+
+	    			//printf("Borde Inferior\n");
 
 
-    			// Caso 2.1: Esquina inferior izquierda
-    			if(j == 0){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1];
-    			}
+	    			// Caso 2.2.1: Esquina inferior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1] + partesMundo2[j] + partesMundo2[j+1];
+	    			}
 
-    			// Caso 2.2: Esquina inferior derecha
-    			else if(j == columnasN - 1){
-	    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-					vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1];
-    			}
+	    			// Caso 2.2.2: Esquina inferior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1] + partesMundo2[j-1] + partesMundo2[j];
+	    			}
 
-    			// Caso 2.3: Borde inferior
-    			else{
+	    			// Caso 2.2.3: Borde inferior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = -1; x <= 0; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+
+			    		vecinosVivos = vecinosVivos + partesMundo2[j-1] + partesMundo2[j] + partesMundo2[j+1];
+		    		}
+	    		}
+
+	    		// Caso 2.3: Borde izquierdo sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == 0){
 		    		// Verifica estado de los 5 vecinos
-		    		for (int x = -1; x <= 0; x++){
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = 0; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 2.4: Borde derecho sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 0; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 2.5: Casilla no esta en ningun extremo o borde
+	    		else{
+		    		// Verifica estado de los 8 vecinos
+		    		for (int x = -1; x <= 1; x++){
 
 			    		for (int y = -1; y <= 1; y++){
 
@@ -295,82 +499,285 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
 
 			    		}
 		    		}
-	    		}
+		    	}
     		}
 
-    		// Caso 3: Borde izquierdo sin ser esquina
-    		else if((i != 0 || i != filasM - 1) && j == 0){
-	    		// Verifica estado de los 5 vecinos
-	    		for (int x = -1; x <= 1; x++){
+    		// Caso 3: Nos encontramos en el ultimo proceso, equivalente al numero de procesosTotales
+    		else if (1 < proceso && proceso = procesosTotales){
 
-		    		for (int y = 0; y <= 1; y++){
+	    		// Caso 3.1: Borde superior
+	    		if (i == 0){
 
-		    			// Se omite contarse a si mismo como vecino
-		    			if (x == 0 && y == 0){
-		    				continue;
-		    			}
-
+	    			// Caso 3.1.1: Esquina superior izquierda
+	    			if(j == 0){
 		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-	    				vecinosVivos += Matriz[i + x][j + y];
+						vecinosVivos = partesMundo1[j] + partesMundo1[j+1] + Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
+	    			}
 
+	    			// Caso 3.1.2: Esquina superior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = partesMundo1[j-1] + partesMundo1[j] + Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
+	    			}
+
+	    			// Caso 3.1.3: Borde superior sin ser esquina sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = 0; x <= 1; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+			    		vecinosVivos = vecinosVivos + partesMundo1[j-1] + partesMundo1[j] + partesMundo1[j+1];
 		    		}
 	    		}
-    		}
 
-    		// Caso 4: Borde derecho sin ser esquina
-    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
-	    		// Verifica estado de los 5 vecinos
-	    		for (int x = -1; x <= 1; x++){
+	    		// Caso 3.2: Borde inferior
+	    		else if (i == filasM - 1){
 
-		    		for (int y = -1; y <= 0; y++){
+	    			//printf("Borde Inferior\n");
 
-		    			// Se omite contarse a si mismo como vecino
-		    			if (x == 0 && y == 0){
-		    				continue;
-		    			}
 
+	    			// Caso 3.2.1: Esquina inferior izquierda
+	    			if(j == 0){
 		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-	    				vecinosVivos += Matriz[i + x][j + y];
+						vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1];
+	    			}
 
+	    			// Caso 3.2.2: Esquina inferior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1];
+	    			}
+
+	    			// Caso 3.2.3: Borde inferior
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = -1; x <= 0; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
 		    		}
 	    		}
-    		}
 
-    		// Caso 5: Casilla no esta en ningun extremo o borde
-    		else{
-	    		// Verifica estado de los 8 vecinos
-	    		for (int x = -1; x <= 1; x++){
+	    		// Caso 3.3: Borde izquierdo sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == 0){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
 
-		    		for (int y = -1; y <= 1; y++){
+			    		for (int y = 0; y <= 1; y++){
 
-		    			// Se omite contarse a si mismo como vecino
-		    			if (x == 0 && y == 0){
-		    				continue;
-		    			}
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
 
-		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
-	    				vecinosVivos += Matriz[i + x][j + y];
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
 
+			    		}
 		    		}
 	    		}
+
+	    		// Caso 3.4: Borde derecho sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 0; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 3.5: Casilla no esta en ningun extremo o borde
+	    		else{
+		    		// Verifica estado de los 8 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+		    	}
+		    }
+
+    		// Caso 4: Hay un solo proceso Total y nos encontramos en el
+    		else if (proceso == 1 && proceso = procesosTotales){
+
+	    		// Casos de casillas:
+
+	    		// Caso 4.1: Borde superior
+	    		if (i == 0){
+
+	    			// Caso 4.1.1: Esquina superior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
+	    			}
+
+	    			// Caso 4.1.2: Esquina superior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
+	    			}
+
+	    			// Caso 4.1.3: Borde superior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = 0; x <= 1; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 4.2: Borde inferior
+	    		else if (i == filasM - 1){
+
+	    			//printf("Borde Inferior\n");
+
+
+	    			// Caso 4.2.1: Esquina inferior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1];
+	    			}
+
+	    			// Caso 4.2.2: Esquina inferior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1];
+	    			}
+
+	    			// Caso 4.2.3: Borde inferior
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = -1; x <= 0; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 4.3: Borde izquierdo sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == 0){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = 0; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 4.4: Borde derecho sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 0; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 4.5: Casilla no esta en ningun extremo o borde
+	    		else{
+		    		// Verifica estado de los 8 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+		    	}
 	    	}
-	    	
 
     		// Reglas del juego
 
     		// 1. Nacimiento: Célula muerta con exactamente 3 vecinos vivos se convierte en célula viva
     		if (Matriz[i][j] == 0 && vecinosVivos == 3){
     			nextGen[i][j] = 1;
-
-    			/*
-	    		printf("Matriz[%d][%d]=%d",i,j,Matriz[i][j]);
-	    		printf("\n");
-
-	    		printf("Nacimiento:\n");
-	    		printf("nextGen[%d][%d]=%d",i,j,nextGen[i][j]);
-	    		printf("\n");
-	    		*/
-
     		}
 
 
@@ -385,10 +792,6 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz){
     		}
     	}    	
     }
-
-	// Imprimir (nexGen, filasM, columnasN);
-
-
     // Retornamos la matriz nueva
     return nextGen;
 }

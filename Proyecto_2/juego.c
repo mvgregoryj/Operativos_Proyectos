@@ -27,7 +27,7 @@ char * ArrayOfInt2String(int *array, int ncol);
 int **pipe_primario, **pipe_secundario, **pipe_terciario;
 long Num_process;
 int **parte_mundo;
-int Cantidad_trabajo, filas, columnas;
+int Cantidad_trabajo, columnas;
 
 struct Partes_de_mundo{
 	int * parte_mundo1;
@@ -43,7 +43,7 @@ int main(int argc, char *argv[] ){
 	long Num_process;
 	long Num_generaciones;
 	long Num_visualizaciones;
-	int Numero_lineas, filas, columnas;
+	int filas;
 
 	Nodo *Lineas_de_mundo=NULL;
 	Num_process=strtol(argv[1],NULL,10);
@@ -103,6 +103,7 @@ int main(int argc, char *argv[] ){
 			//Proceso hijo
 			printf("proceso hijo: %d\n", i);
 			parte_mundo[i] = PrimerTrabajo(i,filas,columnas,Num_process,argv[4]);
+
 			Imprimir(parte_mundo[i],Cantidad_trabajo,columnas);
 			//printf("\n");
 
@@ -244,85 +245,116 @@ Partes_de_mundo LeerPipe(int i, int Num_process, int ncol){
 	char mensaje2[500];
 
 	if(i%2==0 && i==0){
-		read(pipe_secundario[i][0],&mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		// p.partes_mundo2=Traducir(mensaje1);
-		return p;
+		if(read(pipe_secundario[i][0],&mensaje1,sizeof(mensaje1)) == -1){
+			printf("Error leyendo en el pipe\n");
+			//Traducir mensaje a int *
+			// p.partes_mundo2=Traducir(mensaje1);
+			p.partes_mundo2 = StringToArrayOfInt(mensaje1);
+			return p;
+		}
 	}
 
 	if(i%2==0 && i==Num_process-1){
-		read(pipe_secundario[i-1][0], &mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		// p.partes_mundo1=Traducir(mensaje1);
-		return p;
+		if(read(pipe_secundario[i-1][0], &mensaje1,sizeof(mensaje1)) == -1){
+			printf("Error leyendo en el pipe\n");
+			//Traducir mensaje a int *
+			// p.partes_mundo1=Traducir(mensaje1);
+			p.parte_mundo1 = StringToArrayOfInt(mensaje1);
+			return p;
+		}
+			
 	}
 
 	if(i%2!=0 && i==Num_process-1){
-		read(pipe_primario[i-1][0], &mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		// p.partes_mundo1=Traducir(mensaje1);
-		return p;
+		if(read(pipe_primario[i-1][0], &mensaje1,sizeof(mensaje1)) == -1){
+			printf("Error leyendo en el pipe\n");
+			//Traducir mensaje a int *
+			// p.partes_mundo1=Traducir(mensaje1);
+			p.partes_mundo1 = StringToArrayOfInt(mensaje1);
+			return p;
+
+		}
+		
 	}
 
 	if(i%2==0 && i!=0 && i!=Num_process-1){
+
 		read(pipe_secundario[i-1][0], &mensaje1,sizeof(mensaje1));
 		read(pipe_secundario[i][0], &mensaje2,sizeof(mensaje2));
+
 		//Traducir mensaje1 a int *
 		// p.partes_mundo1=Traducir(mensaje1);
+		p.partes_mundo1 = StringToArrayOfInt(mensaje1);
+
 		//Traducir mensaje2 a int *
 		// p.partes_mundo2=Traducir(mensaje2);
+		p.partes_mundo2 = StringToArrayOfInt(mensaje2);
 	
 		
-		return p; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
+		return p; 
 	}
 
 	if(i%2!=0 && i!=Num_process-1){
+
 		read(pipe_primario[i-1][0], mensaje1,sizeof(mensaje1));
 		read(pipe_primario[i][0], mensaje2,sizeof(mensaje2));
+
 		//Traducir mensaje1 a int *
 		// p.partes_mundo1=Traducir(mensaje1);
+		p.partes_mundo1 = StringToArrayOfInt(mensaje1);
+
 		//Traducir mensaje2 a int *
 		// p.partes_mundo2=Traducir(mensaje2);
+		p.partes_mundo2 = StringToArrayOfInt(mensaje2);
 		
-		return p; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
+		return p; 
 	}
 
 }
 
 
 /** Para escribir en los pipes */
-void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas){ 
+void EscribePipe(int i, int * parte_mundo, int Num_process, int num_lineas){ 
 	
 	//Declaracion de variables
 	char mensaje[500]; 
  	char mensaje2[500]; 
 
- 	if(i%2==0 && i==0){ 
+ 	if(i%2==0 && i==0){
 		// pasar de int * parte_mundo[Num_lineas-1] a char [] mensaje 
+		mensaje = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
 		write(pipe_primario[0][1], &mensaje ,sizeof(mensaje)); 
 	} 
 
 	if(i%2==0 && i==Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
+		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
 		write(pipe_primario[i-1][1], &mensaje, sizeof(mensaje)); 
 	} 
 	
 	if(i%2!=0 && i==Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
+		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
 		write(pipe_secundario[i-1][1],&mensaje, sizeof(mensaje)); 
 	} 
 	
 	if(i%2!=0 && i!=Num_process-1){ 
-		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_secundario[i-1][1],&mensaje,sizeof(mensaje)); 
-		// pasar de int * parte_mundo[Num_process-1] a char [] mensaje2 
+		// pasar de int * parte_mundo[0] a char [] mensaje
+		mensaje = ArrayOfInt2String(parte_mundo[0], columnas); 
+		write(pipe_secundario[i-1][1],&mensaje,sizeof(mensaje));
+
+		// pasar de int * parte_mundo[num_lineas-1] a char [] mensaje2
+		mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas); 
 		write(pipe_secundario[i][1],&mensaje2,sizeof(mensaje2)); 
 	} 
 
 	if(i%2==0 && i!=0 && i!=Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_primario[i-1][1],&mensaje,sizeof(mensaje)); 
-		// pasar de int * parte_mundo[Num_process-1] a char [] mensaje 
+		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
+		write(pipe_primario[i-1][1],&mensaje,sizeof(mensaje));
+
+		// pasar de int * parte_mundo[num_lineas-1] a char [] mensaje2 
+		mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
 		write(pipe_primario[i][1],&mensaje2,sizeof(mensaje2)); 
 	} 
 }
@@ -362,7 +394,6 @@ char * ArrayOfInt2String(int *array, int ncol){
 
 	return temp;
 }
-
 
 
 Nodo *TraducirMensaje(char *mensaje,int ncol){

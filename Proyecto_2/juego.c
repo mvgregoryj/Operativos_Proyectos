@@ -208,7 +208,7 @@ int main(int argc, char *argv[] ){
 			return 0;
 			
 		}
-		//pids[i]=pid;
+		pids[i]=pid;
 		//wait(NULL);	// Espera que cada hijo termine para que venga el siguiente 
 					// (Esto para ver si funcionan las funcion de imprimir y PrimerTrabajo pero se debe quitar 
 					// porque no tiene sentido crear uno tras otro)
@@ -549,9 +549,11 @@ void Imprimir(int ** ma, int nfilas, int ncol){
 /** Funcion para imprimir la arreglos */
 void ImprimirArreglo(int * array, int ncol){
 
-  	int n;
 
+	int n;
+	
  	//Se imprime la arreglos
+	printf("\t\t\t\t");	
     for(n=0;n<ncol;n++){
   
         //Si es 1 la celula esta viva, por lo que se imprime un 1

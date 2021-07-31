@@ -24,7 +24,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
     		// Casos por cantidad de procesos
 
     		// Caso 1: Nos encontramos en el 1er proceso y existen más de 1 procesosTotales
-    		if (proceso == 1 && proceso < procesosTotales){
+    		if (proceso === 1 && proceso < procesosTotales){
 
 	    		// Casos de casillas:
 
@@ -301,7 +301,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
     		}
 
     		// Caso 3: Nos encontramos en el ultimo proceso, equivalente al numero de procesosTotales
-    		else if (1 < proceso && proceso = procesosTotales){
+    		else if (1 < proceso && proceso == procesosTotales){
 
 	    		// Caso 3.1: Borde superior
 	    		if (i == 0){
@@ -436,7 +436,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 		    }
 
     		// Caso 4: Hay un solo proceso Total y nos encontramos en el
-    		else if (proceso == 1 && proceso = procesosTotales){
+    		else if (proceso == 1 && proceso == procesosTotales){
 
 	    		// Casos de casillas:
 
@@ -594,12 +594,17 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
     return nextGen;
 }
 
+/* Funcion para exportar las generaciones por bloque de matriz correspondiente a un proceso */
+int ** generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones, int procesosTotales, int proceso, int *partesMundo1, int *partesMundo2){
 
-/* Funcion para imprimir la generaciones */
-void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones){
+    //Declaro las variables que necesitamos
+	int **Generaciones[n_generaciones]; 										// Arreglo donde se almacenaran todas las generaciones
+	int cantidadParaVizualizar = n_generaciones/n_visualizaciones + n_generaciones%n_visualizaciones;
 
-	int **Generaciones[n_generaciones]; 	// Arreglo donde se almacenaran las generaciones
-	int cantidadParaImprimir = n_generaciones/n_visualizaciones + n_generaciones%n_visualizaciones;
+	int procesosTotales, proceso;
+	int *partesMundo1, *partesMundo2;
+
+	int **GenAVisualizar[cantidadParaVizualizar];
 
 	// Iteraciones para almacenar las generaciones el el arreglo
 	for (int i = 0; i < n_generaciones; ++i){
@@ -610,15 +615,23 @@ void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, 
 		}
 		// Si no es la 1ra generación
 		else{
-			Generaciones[i] = gameOfLife(filasM, columnasN, Generaciones[i-1]);
+			Generaciones[i] = gameOfLife(filasM, columnasN, Generaciones[i-1], partesMundo1, partesMundo2, procesosTotales, proceso);
 		}
 	}
 
-	// Iteraciones para imprimir las generaciones cada n_visualizaciones
-	for (int i = 0; i < cantidadParaImprimir; i++){
-		
-		printf("Generación %d: \n", i*n_visualizaciones);
 
-		Imprimir(Generaciones[i*n_visualizaciones], filasM, columnasN);
+	// Iteraciones para guardar en un arreglo solo las generaciones cada n_visualizaciones
+	for (int i = 0; i < cantidadParaVizualizar; i++){
+
+		GenAVisualizar[i] = Generaciones[i*n_visualizaciones];
+		
+		//printf("Generación %d: \n", i*n_visualizaciones);
+
+		//Imprimir(Generaciones[i*n_visualizaciones], filasM, columnasN);
 	}
+
+
+	// Retornamos el arreglo generaciones que con tiene las n_
+	return GenAVisualizar;
 }
+

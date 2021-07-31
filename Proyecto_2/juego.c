@@ -21,12 +21,16 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 // void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones);
 int * StringToArrayOfInt(char* str);
 char * ArrayOfInt2String(int *array, int ncol);
+int Cantidad_de_trabajo(int Proceso, int filas, int numero_de_procesos);
+void ImprimirArreglo(int * array, int ncol);
+
 
 
 int **pipe_primario, **pipe_secundario, **pipe_terciario;
 long Num_process;
 int **parte_mundo;
-int Cantidad_trabajo, columnas;
+int columnas;
+
 
 struct Partes_de_mundo{
 	int * partes_mundo1;
@@ -50,7 +54,13 @@ int main(int argc, char *argv[] ){
 	Num_process=strtol(argv[1],NULL,10);
 	Num_generaciones=strtol(argv[2],NULL,10);
 	Num_visualizaciones=strtol(argv[3],NULL,10);
-	
+
+	// Variables para generaaciones:
+	int **Generaciones[Num_generaciones]; 						// Arreglo donde se almacenaran todas las generaciones
+	int cantidadParaVizualizar = Num_generaciones/Num_visualizaciones + Num_generaciones%Num_visualizaciones;
+
+	int **GenAVisualizar[cantidadParaVizualizar];
+
 	FILE *file=fopen(argv[4],"rt");
 	if (file==NULL){
 		perror("Error en la apertura del archivo");
@@ -68,14 +78,34 @@ int main(int argc, char *argv[] ){
 	}
 	fclose(file);
 
-	//Declaracion de pipes
 	pid_t *pids=malloc(sizeof(pid_t) * Num_process);
-	int pipe_primario[Num_process-1][2];
-	int pipe_secundario[Num_process-1][2];
-	int pipe_terciario[Num_process][2];
-	int ** parte_mundo[Num_process];
-	int k=0;
 
+	//Declaracion de pipes
+	pipe_primario = malloc(sizeof(int) * Num_process);
+	pipe_primario[0] = malloc(sizeof(int)* 2 * Num_process);
+	
+	for(int i = 1; i<Num_process; i++){
+		pipe_primario[i] = pipe_primario[0]+i*2;
+	}
+
+
+	pipe_secundario = malloc(sizeof(int) * Num_process);
+	pipe_secundario[0] = malloc(sizeof(int)* 2 * Num_process);
+	
+	for(int i = 1; i<Num_process; i++){
+		pipe_secundario[i] = pipe_secundario[0]+i*2;
+	}
+
+
+	pipe_terciario = malloc(sizeof(int) * Num_process);
+	pipe_terciario[0] = malloc(sizeof(int)* 2 * Num_process);
+	
+	for(int i = 1; i<Num_process; i++){
+		pipe_terciario[i] = pipe_terciario[0]+i*2;
+	}
+
+	int ** parte_mundo[Num_process];
+	
 	//pipes[x][0] lee
 	//pipes[x][1] escribe
 
@@ -84,14 +114,18 @@ int main(int argc, char *argv[] ){
 		if(pipe(pipe_primario[x]) == -1){
 			printf("Error creando el pipe.");
 		}
+
 		if(pipe(pipe_secundario[x]) == -1){
 			printf("Error creando el pipe.");
 		}
+	}
+
+	for(int x=0;x<Num_process;x++){
 		if(pipe(pipe_terciario[x]) == -1){
 			printf("Error creando el pipe.");
 		}			
-	}
-	
+	}	
+
 	//Creacion de procesos	
 	for (int i = 0; i < Num_process; ++i){
 		pid_t pid = fork();
@@ -100,41 +134,33 @@ int main(int argc, char *argv[] ){
 			printf("Error creando el proceso.");
 		}
 
-		if(pid == 0 && k == 0){
+		if(pid == 0){
 
 			//Proceso hijo
 
-			// Se cierran os pipes innecesarios
+			// Se cierran los pipes innecesarios
 			cerrar_pipes(i);
-
-			//
 
 			int *partesMundo1, *partesMundo2;
 
-			printf("proceso hijo: %d\n", i);
+			printf("\nProceso hijo: %d\n", i);
 			parte_mundo[i] = PrimerTrabajo(i,filas,columnas,Num_process,argv[4]);
 
-			printf("Hola\n");
+			Imprimir(parte_mundo[i], Cantidad_de_trabajo(i, filas, Num_process), columnas);
+			printf("\n");
 
 			//Se escribe el pipe
-			EscribePipe(i, parte_mundo[i], Num_process, Cantidad_trabajo);
-
-			printf("Hola2\n");
+			printf("Fila 0 del parte_mundo[%d] = \n", i);
+			ImprimirArreglo(parte_mundo[i][0], columnas);
+			//Imprimir(parte_mundo, Cantidad_de_trabajo(i, filas, Num_process), columnas);
+			EscribePipe(i, parte_mundo[i], Num_process, Cantidad_de_trabajo(i, filas, Num_process));
 
 			//Se lee el pipe
 			Partes_de_mundo pM;
 			pM = LeerPipe(i, Num_process, columnas);
 
-			printf("Hola3\n");
-
 			/////////////////// GENERACIONES ///////////////////
 			
-				int **Generaciones[Num_generaciones]; 						// Arreglo donde se almacenaran todas las generaciones
-				int cantidadParaVizualizar = Num_generaciones/Num_visualizaciones + Num_generaciones%Num_visualizaciones;
-
-				int Num_process, i;
-
-				int **GenAVisualizar[cantidadParaVizualizar];
 
 				// Iteraciones para almacenar las generaciones el el arreglo
 				for (int l = 0; l < Num_generaciones; ++l){
@@ -146,10 +172,10 @@ int main(int argc, char *argv[] ){
 					// Si no es la 1ra generación
 					else{
 
-						Generaciones[l] = gameOfLife(Cantidad_trabajo, columnas, Generaciones[l-1], pM.partes_mundo1, pM.partes_mundo2, Num_process, i);
+						Generaciones[l] = gameOfLife(Cantidad_de_trabajo(i, filas, Num_process), columnas, Generaciones[l-1], pM.partes_mundo1, pM.partes_mundo2, Num_process, i);
 								
 						//Se escribe el pipe
-						EscribePipe(i, Generaciones[l], Num_process, Cantidad_trabajo);
+						EscribePipe(i, Generaciones[l], Num_process, Cantidad_de_trabajo(i, filas, Num_process));
 
 						//Se lee el pipe
 						pM = LeerPipe(i, Num_process, columnas);
@@ -168,13 +194,13 @@ int main(int argc, char *argv[] ){
 					
 					printf("Generación %d: \n", i*Num_visualizaciones);
 
-					Imprimir(Generaciones[i*Num_visualizaciones], Cantidad_trabajo, columnas);
+					Imprimir(Generaciones[i*Num_visualizaciones], Cantidad_de_trabajo(i, filas, Num_process), columnas);
 				}
 
 			
 
 
-			Imprimir(parte_mundo[i],Cantidad_trabajo,columnas);
+			Imprimir(parte_mundo[i],Cantidad_de_trabajo(i, filas, Num_process),columnas);
 			printf("\n");
 
 
@@ -195,23 +221,38 @@ int main(int argc, char *argv[] ){
 
 }
 
+/*Funcion para calcular la cantidad de trabajo*/
+int Cantidad_de_trabajo(int Proceso, int filas, int numero_de_procesos){
+
+	int Cantidad_trabajo;
+
+	if(Proceso != numero_de_procesos-1){
+		Cantidad_trabajo = filas/numero_de_procesos; //Cantidad de lineas que le toca a un proceso
+		//printf("cantidad de trabajo proceso %d = %d\n", Proceso, Cantidad_trabajo);
+	}
+
+	if(Proceso == numero_de_procesos-1){
+		Cantidad_trabajo = filas/numero_de_procesos+(filas%numero_de_procesos); //Cantidad de lineas que le toca al ultimo proceso
+		//printf("cantidad de trabajo proceso %d = %d\n", Proceso, Cantidad_trabajo);
+	}
+	return Cantidad_trabajo;
+}
+
+
 
 /**Funcion para asignar a cada proceso las lineas que le corresponden*/
 int **PrimerTrabajo(int Proceso, int filas, int columnas, int numero_de_procesos, char *Archivo){
 
 	int **parte_mundo;
+	int Cantidad_trabajo;
 
-	if(Proceso != numero_de_procesos-1){
-		Cantidad_trabajo = filas/numero_de_procesos; //Cantidad de lineas que le toca a un proceso
-		parte_mundo = LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
-		return parte_mundo;
-	}
+	Cantidad_trabajo = Cantidad_de_trabajo(Proceso, filas, numero_de_procesos); //Cantidad de lineas que le toca a un proceso
+	parte_mundo = LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
 
-	if(Proceso == numero_de_procesos-1){
-		Cantidad_trabajo = filas/numero_de_procesos+(filas%numero_de_procesos); //Cantidad de lineas que le toca al ultimo proceso
-		parte_mundo = LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
-		return parte_mundo;
-	}
+	//printf("Cantidad de trabajo proceso %d = %d\n", Proceso, Cantidad_trabajo);
+
+	return parte_mundo;
+
 }
 
 
@@ -382,56 +423,59 @@ Partes_de_mundo LeerPipe(int i, int Num_process, int ncol){
 		return p; 
 	}
 
+	
 }
 
 
 /** Para escribir en los pipes */
 void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas){ 
 
-	printf("holaPipe1\n");
-	
 	//Declaracion de variables
-	char *mensaje; 
- 	char *mensaje2; 
+	//char *mensaje; 
+ 	//char *mensaje2; 
 
  	if(i%2==0 && i==0){
+		ImprimirArreglo(parte_mundo[num_lineas - 1],columnas);
 		// pasar de int * parte_mundo[Num_lineas-1] a char [] mensaje 
-		mensaje = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
+
+		char *mensaje = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
+    	//printf("mensaje: %s\n", mensaje);
 		write(pipe_primario[0][1], &mensaje ,sizeof(mensaje)); 
 	} 
+	
 
 	if(i%2==0 && i==Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
-		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
+		char *mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
 		write(pipe_primario[i-1][1], &mensaje, sizeof(mensaje)); 
 	} 
 	
 	if(i%2!=0 && i==Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
-		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
+		char *mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
 		write(pipe_secundario[i-1][1],&mensaje, sizeof(mensaje)); 
 	} 
 	
 	if(i%2!=0 && i!=Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje
-		mensaje = ArrayOfInt2String(parte_mundo[0], columnas); 
+		char *mensaje = ArrayOfInt2String(parte_mundo[0], columnas); 
 		write(pipe_secundario[i-1][1],&mensaje,sizeof(mensaje));
 
 		// pasar de int * parte_mundo[num_lineas-1] a char [] mensaje2
-		mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas); 
+		char *mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas); 
 		write(pipe_secundario[i][1],&mensaje2,sizeof(mensaje2)); 
 	} 
 
 	if(i%2==0 && i!=0 && i!=Num_process-1){ 
 		// pasar de int * parte_mundo[0] a char [] mensaje 
-		mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
+		char *mensaje = ArrayOfInt2String(parte_mundo[0], columnas);
 		write(pipe_primario[i-1][1],&mensaje,sizeof(mensaje));
 
 		// pasar de int * parte_mundo[num_lineas-1] a char [] mensaje2 
-		mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
+		char *mensaje2 = ArrayOfInt2String(parte_mundo[num_lineas-1], columnas);
 		write(pipe_primario[i][1],&mensaje2,sizeof(mensaje2)); 
 	} 
-	printf("Escribepipe_final\n");
+	
 
 }
 
@@ -462,33 +506,18 @@ int * StringToArrayOfInt(char* str){
 char * ArrayOfInt2String(int *array, int ncol){
 	
 	char * temp;
-	temp = malloc(sizeof(char)*1000);
-
+	temp = (char*)malloc(sizeof(char)*100);
+	
 	for(int i=0; i<ncol; i++){
+		//printf("array: %d\n", array[i]);
 		sprintf(&temp[i], "%d", array[i]);
+		//printf("temp: %d\n", temp[i]);
 	}
-
+	
+	//printf("temp: %s\n", temp);
 	return temp;
-}
 
-
-Nodo *TraducirMensaje(char *mensaje,int ncol){
-	Nodo *lista_numeros=NULL;
-	int numero;
-	int i=0;
-	while(i<ncol){
-		numero=mensaje[i]-'0';
-		if(i==0){
-			InsertarInicio(&lista_numeros,numero);
-			i++;
-		}
-		if (i!=0){
-			InsertarFinal(&lista_numeros,numero);
-			i++;
-		}
-	}
-	return lista_numeros;
-
+	
 }
 
 
@@ -514,6 +543,29 @@ void Imprimir(int ** ma, int nfilas, int ncol){
         //Salto de linea al llegar al final de la fila
         printf("\n");
     }
+	
+}
+
+/** Funcion para imprimir la arreglos */
+void ImprimirArreglo(int * array, int ncol){
+
+  	int n;
+
+ 	//Se imprime la arreglos
+    for(n=0;n<ncol;n++){
+  
+        //Si es 1 la celula esta viva, por lo que se imprime un 1
+        if(array[n] == 1){
+            printf(ANSI_COLOR_GREEN   " 1 "   ANSI_COLOR_RESET); // Verde si la celula esta viva
+        }
+  		//Si no, esta muerta y se imprime un 0
+        else{
+            printf(ANSI_COLOR_RED     " 0 "     ANSI_COLOR_RESET); // Rojo si la celula esta muerta
+        }
+    }
+    //Salto de linea al llegar al final de la fila
+    printf("\n");
+
 	
 }
 

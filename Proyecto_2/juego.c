@@ -1,52 +1,129 @@
 #include "Lista_Enlazada.c"
-#include <stdio.h>
-#include <stdbool.h>
+#include<stdio.h>
+#include<stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/wait.h>
-
-//Para colores verde y rojo
-#define ANSI_COLOR_RED     "\x1b[31m"
-#define ANSI_COLOR_GREEN   "\x1b[32m"
-#define ANSI_COLOR_RESET   "\x1b[0m"
+#include<sys/wait.h>
+#include <pthread.h>
 
 int Tellme_lines(char *Archivo);
+void ImprimirMundo(int **Mundo, int filas, int columnas);
+int ** Generar_Mundo(char * Archivo, int filas, int columnas);
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo);
 void Imprimir(int ** ma, int nfilas, int ncol);
-int **PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo);
+void PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo);
 Nodo *TraducirMensaje(char *mensaje,int ncol);
-void cerrar_pipes(int i);
-int **LeerPipe(int i, int Num_process, int ncol);
-void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas);
+struct Partes_mundo{
+	int * parte_mundo1;
+	int * parte_mundo2;
+};
 
+typedef struct Partes_mundo Partes_mundo;
 
-int **pipe_primario, **pipe_secundario, **pipe_terciario;
-long Num_process;
-int **parte_mundo;
-int Cantidad_trabajo, filas, columnas;
+Partes_mundo LeerPipe(int i, int Num_process,int ncol){
+	Partes_mundo p;
+	char mensaje1[500];
+	char mensaje2[500];
+	if(i%2==0 && i==0){
+		read(pipe_segundario[i][0],&mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//p.parte_mundo2=Traducir(mensaje1);
+		return p;
+	}
+	if(i%2==0 && i==Num_process-1){
+		read(pipe_segundario[i-1][0], &mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//p.parte_mundo1=Traducir(mensaje1);
+		return p;
+	}
+	if(i%2!=0 && i==Num_process-1){
+		read(pipe_primario[i-1][0], &mensaje1,sizeof(mensaje1));
+		//Traducir mensaje a int *
+		//p.parte_mundo1=Traducir(mensaje1);
+		return p;
+	}
+
+	if(i%2==0 && i!=0 &i!=Num_process-1){
+		read(pipe_segundario[i-1][0], &mensaje1,sizeof(mensaje1));
+		read(pipe_segundario[i][0], &mensaje2,sizeof(mensaje2));
+		//Traducir mensaje1 a int *
+		//p.parte_mundo1=Traducir(mensaje1);
+		//Traducir mensaje2 a int *
+		//p.parter_mundo2=Traducir(mensaje2);
+		return p;
+		
+	}
+	if(i%2!=0 && i!=Num_process-1){
+		read(pipe_primario[i-1][0], &mensaje1,sizeof(mensaje1));
+		read(pipe_primario[i][0], &mensaje2,sizeof(mensaje2));
+		//Traducir mensaje1 a int *
+		//p.parte_mundo1=Traducir(mensaje1);
+		//Traducir mensaje2 a int *
+		//p.parter_mundo2=Traducir(mensaje2);
+		
+		return p;
+	}
+
+}
+void Escritura(int i, int ** parte_mundo, int Num_process, int num_lineas ){ 
+ char mensaje1[500]; 
+ char mensaje2[500]; 
+ if(i%2==0 && i==0){ 
+  // pasar de int * parte_mundo[Num_lineas-1] a char [] mensaje 
+  write(pipe_primario[i][1], &mensaje1 ,sizeof(mensaje1)); 
+ 
+ 
+ } 
+ if(i%2==0 && i==Num_process-1 ){ 
+  // pasar de int * parte_mundo[0] a char [] mensaje 
+  write(pipe_primario[i-1][1], &mensaje1, sizeof(mensaje1)); 
+ } 
+ 
+ if(i%2!=0 && i==Num_process-1){ 
+  // pasar de int * parte_mundo[0] a char [] mensaje 
+  write(pipe_segundario[i-1][i],&mensaje1, sizeof(mensaje1)); 
+ } 
+ 
+ if(i%2!=0 && i!=Num_process-1){ 
+  // pasar de int * parte_mundo[0] a char [] mensaje 
+  write(pipe_segundario[i-1][1],&mensaje1,sizeof(mensaje1)); 
+  // pasar de int * parte_mundo[Num_process-1] a char [] mensaje2 
+  write(pipe_segundario[i][1],&mensaje2,sizeof(mensaje2)); 
+ 
+ } 
+ if(i%2==0 && i!=0 && i!=Num_process-1){ 
+  // pasar de int * parte_mundo[0] a char [] mensaje 
+  write(pipe_primario[i-1][1],&mensaje1,sizeof(mensaje1)); 
+  // pasar de int * parte_mundo[Num_process-1] a char [] mensaje 
+  write(pipe_primario[i][1],&mensaje2,sizeof(mensaje2)); 
+ } 
+}
 
 
 int main(int argc, char *argv[] ){
-
-	//Declaracion de variables
 	long Num_process;
 	long Num_generaciones;
 	long Num_visualizaciones;
-	int Numero_lineas, filas, columnas;
-
+	int Numero_lineas;
 	Nodo *Lineas_de_mundo=NULL;
 	Num_process=strtol(argv[1],NULL,10);
 	Num_generaciones=strtol(argv[2],NULL,10);
 	Num_visualizaciones=strtol(argv[3],NULL,10);
 	Numero_lineas=Tellme_lines(argv[4]);
+	#define ANSI_COLOR_RED     "\x1b[31m"
+	#define ANSI_COLOR_GREEN   "\x1b[32m"
+	#define ANSI_COLOR_RESET   "\x1b[0m"
+
+	printf("%d\n",Numero_lineas);
+
 
 	FILE *file=fopen(argv[4],"rt");
 	if (file==NULL){
 		perror("Error en la apertura del archivo");
 	}
-	
-	//Se leen el numero de filas y columnas del archivo
+	int filas;
+	int columnas;
 	for(int i=0;i<2;i++){
 		if (i==0){
 			fscanf(file, "%d",&filas);
@@ -57,56 +134,29 @@ int main(int argc, char *argv[] ){
 		
 	}
 	fclose(file);
-
-	//Declaracion de pipes
-	pid_t *pids=malloc(sizeof(pid_t) * Num_process);
 	int pipe_primario[Num_process-1][2];
-	int pipe_secundario[Num_process-1][2];
-	int pipe_terciario[Num_process-1][2];
-	int ** parte_mundo[Num_process];
+	int pipe_segundario[Num_process-1][2];
 	int k=0;
+	pid_t *pids=malloc(sizeof(pid_t) * Num_process);
 
-	//pipes[x][0] lee
-	//pipes[x][1] escribe
-
-	//Creacion de pipes
 	for(int x=0;x<Num_process-1;x++){
-		if(pipe(pipe_primario[x]) == -1){
-			printf("Error creando el pipe.");
-		}
-		if(pipe(pipe_secundario[x]) == -1){
-			printf("Error creando el pipe.");
-		}
-		if(pipe(pipe_terciario[x]) == -1){
-			printf("Error creando el pipe.");
-		}			
+			pipe(pipe_primario[x]);
+			pipe(pipe_segundario[x]);
+			pipe(pipe_terciario[x]);
+
 	}
-	
-	//Creacion de procesos	
+	int **parte_mundo;
 	for (int i = 0; i < Num_process; ++i){
-		pid_t pid = fork();
-
-		if(pid == -1){
-			printf("Error creando el proceso.");
-		}
-
-		if(pid == 0 && k == 0){
-			//Proceso hijo
-			printf("proceso hijo: %d\n", i);
-			parte_mundo[i] = PrimerTrabajo(i,filas,columnas,Num_process,argv[4]);
-			Imprimir(parte_mundo[i],Cantidad_trabajo,columnas);
-			//printf("\n");
-
+		pid_t pid=fork();
+		if(pid==0 && k==0){
+			parte_mundo=PrimerTrabajo(i,filas,columnas,Num_process,argv[4]);
+			printf("\n");
 			return 0;
 			
 		}
 		pids[i]=pid;
-		wait(NULL);	// Espera que cada hijo termine para que venga el siguiente 
-					// (Esto para ver si funcionan las funcion de imprimir y PrimerTrabajo pero se debe quitar 
-					// porque no tiene sentido crear uno tras otro)
+	
 	}
-
-	//El padre espera a los hijos
 	for (int i = 0; i < Num_process; i++) {
         waitpid(pids[i], NULL, 0);
     }
@@ -114,169 +164,13 @@ int main(int argc, char *argv[] ){
 }
 
 
-/**Funcion para asignar a cada proceso las lineas que le corresponden*/
-int **PrimerTrabajo(int Proceso, int filas, int columnas, int numero_de_procesos, char *Archivo){
+	//int** mini_mundo=LeerArchivoProceso(20, 20,10,9,2,argv[4]);
 
-	int **parte_mundo;
-
-	if(Proceso != numero_de_procesos-1){
-		Cantidad_trabajo = filas/numero_de_procesos; //Cantidad de lineas que le toca a un proceso
-		parte_mundo = LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
-		return parte_mundo;
-	}
-
-	if(Proceso == numero_de_procesos-1){
-		Cantidad_trabajo = filas/numero_de_procesos+(filas%numero_de_procesos); //Cantidad de lineas que le toca al ultimo proceso
-		parte_mundo = LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
-		return parte_mundo;
-	}
-}
-
-
-/**Funcion para cerrar los pipes que no use el proceso*/
-void cerrar_pipes(int i){
-	
-	for(int j=0; j<Num_process;j++){
-
-		//Se cierran los pipes de lectura que no usara el proceso i
-		if(i%2==0 && i==0 && i!=j){									//Cuando es el proceso 0
-			close(pipe_secundario[j][0]);
-		}
-
-		if(i%2==0 && i==0){											//Cuando es el proceso 0 no se usa el primario
-			close(pipe_primario[j][0]);								//entonces se cierran todos 
-		}
-
-		if(i%2==0 && i==Num_process-1 && i-1!=j){					//Cuando el proceso es par y es el ultimo
-			close(pipe_primario[j][0]);
-		}
-
-		if(i%2==0 && i==Num_process-1){							    //Cuando el proceso es par y es el ultimo, como no
-			close(pipe_secundario[j][0]);							//usa los secundarios se cierran todos estos
-		}
-
-		if(i%2!=0 && i==Num_process-1 && i-1!=j){					//Cuando el proceso es impar y es el ultimo
-			close(pipe_secundario[j][0]);					
-		}
-
-		if(i%2!=0 && i==Num_process-1){								//Cuando el proceso es impar y es el ultimo, como no
-			close(pipe_primario[j][0]);								//usa los primarios se cierran todos estos
-		}
-
-		if(i%2==0 && i!=0 && i!=Num_process-1 && i!=j && i-1!=j){	//Cuando el proceso es par y no es el ultimo
-			close(pipe_secundario[j][0]);
-		}
-
-		if(i%2==0 && i!=0 && i!=Num_process-1){						//Cuando el proceso es par y no es el ultimo, como no
-			close(pipe_primario[j][0]);								//usa los primarios se cierran todos estos
-		}
-
-		if(i%2!=0 && i!=Num_process-1 && i!=j && i-1!=j){			//Cuando el proceso es impar y no es el ultimo
-			close(pipe_primario[j][0]);
-		}
-
-		if(i%2!=0 && i!=Num_process-1){								//Cuando el proceso es impar y no es el ultimo, como no
-			close(pipe_secundario[j][0]);							//usa los secundarios se cierran todos estos
-		}
-		
-		//TO DO: Se cierran los pipes de escritura que no usara el proceso i 
-		
-	}
-
-
-}
-
-
-/** Para leer pipes */
-int **LeerPipe(int i, int Num_process, int ncol){
-
-	//Declaracion de variables
-	int **linea_vecina1=(int**)malloc(ncol*sizeof(int));
-	int **linea_vecina2=(int**)malloc(ncol*sizeof(int));
-	char mensaje1[500];
-	char mensaje2[500];
-
-	if(i%2==0 && i==0){
-		read(pipe_secundario[i][0],mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		//linea_vecina=mesnaje traducido;
-		return linea_vecina1;
-	}
-
-	if(i%2==0 && i==Num_process-1){
-		read(pipe_primario[i-1][0], mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		//linea_vecina=mesnaje traducido;
-		return linea_vecina1;
-	}
-
-	if(i%2!=0 && i==Num_process-1){
-		read(pipe_secundario[i-1][0], mensaje1,sizeof(mensaje1));
-		//Traducir mensaje a int *
-		//linea_vecina=mesnaje traducido;
-		return linea_vecina1;
-	}
-
-	if(i%2==0 && i!=0 && i!=Num_process-1){
-		read(pipe_secundario[i-1][0], mensaje1,sizeof(mensaje1));
-		read(pipe_secundario[i][0], mensaje2,sizeof(mensaje2));
-		//Traducir mensaje1 a int *
-		//linea_vecina=mesnaje1 traducido;
-		//Traducir mensaje2 a int *
-		//linea_vecina=mesnaje traducido;
-		
-		return linea_vecina1; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
-	}
-
-	if(i%2!=0 && i!=Num_process-1){
-		read(pipe_primario[i-1][0], mensaje1,sizeof(mensaje1));
-		read(pipe_primario[i][0], mensaje2,sizeof(mensaje2));
-		//Traducir mensaje1 a int *
-		//linea_vecina=mesnaje1 traducido;
-		//Traducir mensaje2 a int *
-		//linea_vecina=mesnaje traducido;
-		
-		return linea_vecina1; //  UY se retorna dos hay que retornar una estructura :/ o hacer arreglo de arreglo 
-	}
-
-}
-
-
-/** Para escribir en los pipes */
-void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas){ 
-	
-	char mensaje[500]; 
- 	char mensaje2[500]; 
-
- 	if(i%2==0 && i==0){ 
-		// pasar de int * parte_mundo[Num_lineas-1] a char [] mensaje 
-		write(pipe_primario[0][1], &mensaje ,sizeof(mensaje)); 
-	} 
-
-	if(i%2==0 && i==Num_process-1 ){ 
-		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_primario[i-1][1], &mensaje, sizeof(mensaje)); 
-	} 
-	
-	if(i%2!=0 && i==Num_process-1){ 
-		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_secundario[i-1][i],&mensaje, sizeof(mensaje)); 
-	} 
-	
-	if(i%2!=0 && i!=Num_process-1){ 
-		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_secundario[i-1][1],&mensaje,sizeof(mensaje)); 
-		// pasar de int * parte_mundo[Num_process-1] a char [] mensaje2 
-		write(pipe_secundario[i][1],&mensaje2,sizeof(mensaje2)); 
-	} 
-
-	if(i%2==0 && i!=0 && i!=Num_process-1){ 
-		// pasar de int * parte_mundo[0] a char [] mensaje 
-		write(pipe_primario[i-1][1],&mensaje,sizeof(mensaje)); 
-		// pasar de int * parte_mundo[Num_process-1] a char [] mensaje 
-		write(pipe_primario[i][1],&mensaje2,sizeof(mensaje2)); 
-	} 
-}
+	//for(int i=0;i<2;i++){
+	//	for(int j=0;j<20;j++){
+		//	printf("%d\n",mini_mundo[i][j]);
+		//}
+	//}
 
 
 
@@ -300,13 +194,35 @@ Nodo *TraducirMensaje(char *mensaje,int ncol){
 }
 
 
-/** Funcion para imprimir la matriz */
+
+
+int **PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo){
+	int Cantidad_trabajo;
+	int **parte_mundo;
+	if(Proceso!=numero_de_procesos-1){
+		Cantidad_trabajo=filas/numero_de_procesos;
+		parte_mundo=LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
+		return parte_mundo;
+
+		
+
+	}
+
+	if(Proceso==numero_de_procesos-1){
+		Cantidad_trabajo=filas/numero_de_procesos+(filas%numero_de_procesos);
+		parte_mundo=LeerArchivoProceso(filas,columnas,numero_de_procesos,Proceso,Cantidad_trabajo,Archivo);
+		return parte_mundo;
+
+	}
+
+
+}
+
 void Imprimir(int ** ma, int nfilas, int ncol){
+  int m,n;
 
-  	int m,n;
-
- 	//Se imprime la matriz
-  	for(m=0;m<nfilas;m++){		
+  //Se imprime la matriz
+  for(m=0;m<nfilas;m++){
         printf("\t\t\t\t");
         for(n=0;n<ncol;n++){
       
@@ -314,7 +230,7 @@ void Imprimir(int ** ma, int nfilas, int ncol){
             if(ma[m][n] == 1){
                 printf(ANSI_COLOR_GREEN   " 1 "   ANSI_COLOR_RESET); // Verde si la celula esta viva
             }
-      		//Si no, esta muerta y se imprime un 0
+      //Si no, esta muerta y se imprime un 0
             else{
                 printf(ANSI_COLOR_RED     " 0 "     ANSI_COLOR_RESET); // Rojo si la celula esta muerta
             }
@@ -322,34 +238,69 @@ void Imprimir(int ** ma, int nfilas, int ncol){
         //Salto de linea al llegar al final de la fila
         printf("\n");
     }
-	
 }
 
+int ** Generar_Mundo(char * Archivo, int filas, int columnas){
+	Nodo *Lineas_de_mundo=NULL;
+	int numero;
+	FILE *files=fopen(Archivo,"rt");
+	if (files==NULL){
+		perror("Error en la apertura del archivo");
+	}
+	int i=0;
+	int j=0;
+	while(fscanf(files,"%d",&numero)==1){
+		if(i==0 || i==1){
+			i++	;
+		}
+		else{
+			if(i==2){
+				InsertarInicio(&Lineas_de_mundo,numero);
+				i++;
+			}
+			else{
+				InsertarFinal(&Lineas_de_mundo,numero);
+				i++;
+			}
 
-/**Funcion donde cada proceso lee 
-del archivo las lineas que le toca
-y luego se guardan en un sub-arreglo bidimensional*/
+		}
+
+		
+	}
+	fclose(files);
+	int **Mundo;
+	int xnumero;
+	Mundo= (int**)malloc(filas*sizeof(int*));
+  	for(int i=0;i<filas;i++){
+      Mundo[i] = (int*)malloc(columnas*sizeof(int));
+      for(int j=0;j<columnas;j++){
+        int xnumero=EliminarInicio(&Lineas_de_mundo);
+        Mundo[i][j]=xnumero;
+      }
+    }
+    return Mundo;
+}
+
 int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int Proceso, int cantidad_de_lineas, char *Archivo){
 	int i=-2;
 	int j=0;
-	int Empiezo_desde=Proceso*(filas/numero_de_procesos); //Multiplicamos el proceso por la cantidad de lineas que le tocan para saber desde donde empieza a guardar las lineas
+	int Empiezo_desde=Proceso*(filas/numero_de_procesos); //Multiplicamos el proceso por la cantidad de lineas que le tocan para saber desde donde empeiza a guardar las lineas
 	int** parte_mundo;
 	Nodo *Lista_lineas=NULL;
 
 	FILE *flujo=fopen(Archivo,"rt"); // Abrimos el archivo en modo lectura 
 	if (flujo==NULL){
-		perror("Error en la apertura de larchivo");
+		perror("Error en l apertura de larchivo");
 	}
 	char linea[100];
 	char basura[100];
 	int xx=0;
 	int ii=0;
 	bool lista_vacia=true;
-	
 	while(feof(flujo)==0){  // Se va iterando sobre las lineas del archivo hasta llegar a la primera linea del proceso en cuestion, luego cada linea se pasa a entero 
 		if(i==Empiezo_desde){   // y se va guardando en orden en la lista enlazada
 			while(xx<cantidad_de_lineas){
-				fgets(linea,cantidad_de_lineas*columnas,flujo);
+				fgets(linea,100,flujo);
 				ii=0;
 				while(linea[ii]!='\0'){
 					if(ii%2==0){
@@ -378,9 +329,8 @@ int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int P
 		}
 	}
 
-	fclose(flujo);
 
-	parte_mundo = (int**)malloc(cantidad_de_lineas*sizeof(int*)); // se el doble apuntador que representa el arreglo con el tamaño de las columnas y las lineas que le toca
+	parte_mundo= (int**)malloc(cantidad_de_lineas*sizeof(int*)); // se el doble apuntador que representa el arreglo con el tamaño de las columnas y las lineas que le toca
 	for(int i=0;i<cantidad_de_lineas;i++){                        // se va extrayendo de la lista numero por numero y se guarda en el arreglo, finalmente se obtiene la parte del mundo que le toca al proceso
     	parte_mundo[i] = (int*)malloc(columnas*sizeof(int));
     	for(int j=0;j<columnas;j++){
@@ -391,10 +341,38 @@ int ** LeerArchivoProceso(int filas, int columnas, int numero_de_procesos, int P
     
     return parte_mundo;
 
+
+
+
 }
 
 
-/** Funcion para saber cuantas lineas tiene el archivo*/
+
+void ImprimirMundo(int **Mundo, int filas, int columnas){
+
+	char espacio[50]="  ";
+	int z=0;
+	int k=0;
+
+
+	while(z<filas){
+		k=0;
+		while(k<columnas){
+			if(k!=columnas-1){
+				printf("%d" "%s",Mundo[z][k], espacio);
+				k++;
+			}
+			if(k==columnas-1){
+				printf("%d\n", Mundo[z][k]);
+				k++;
+			}
+		}
+		z++;
+	}
+}
+
+
+
 int Tellme_lines(char *Archivo)
 {
 	char ca;
@@ -421,4 +399,3 @@ int Tellme_lines(char *Archivo)
 
 		return count;
 }
-

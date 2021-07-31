@@ -595,7 +595,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 }
 
 /* Funcion para exportar las generaciones por bloque de matriz correspondiente a un proceso */
-int ** generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones, int procesosTotales, int proceso, int *partesMundo1, int *partesMundo2){
+int ** generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones, int *partesMundo1, int *partesMundo2 , int procesosTotales, int proceso){
 
     //Declaro las variables que necesitamos
 	int **Generaciones[n_generaciones]; 										// Arreglo donde se almacenaran todas las generaciones

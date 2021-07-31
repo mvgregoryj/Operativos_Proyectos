@@ -16,7 +16,6 @@ void Imprimir(int ** ma, int nfilas, int ncol);
 int **PrimerTrabajo(int Proceso,int filas, int columnas, int numero_de_procesos, char *Archivo);
 Nodo *TraducirMensaje(char *mensaje,int ncol);
 void cerrar_pipes(int i);
-Partes_de_mundo LeerPipe(int i, int Num_process, int ncol);
 void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas);
 int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, int *partesMundo2, int procesosTotales, int proceso);
 void generaciones(int filasM, int columnasN, int ** Matriz, int n_generaciones, int n_visualizaciones);
@@ -30,11 +29,13 @@ int **parte_mundo;
 int Cantidad_trabajo, columnas;
 
 struct Partes_de_mundo{
-	int * parte_mundo1;
-	int * parte_mundo2;
+	int * partes_mundo1;
+	int * partes_mundo2;
 };
 
 typedef struct Partes_de_mundo Partes_de_mundo; 
+
+Partes_de_mundo LeerPipe(int i, int Num_process, int ncol);
 
 
 int main(int argc, char *argv[] ){
@@ -259,7 +260,7 @@ Partes_de_mundo LeerPipe(int i, int Num_process, int ncol){
 			printf("Error leyendo en el pipe\n");
 			//Traducir mensaje a int *
 			// p.partes_mundo1=Traducir(mensaje1);
-			p.parte_mundo1 = StringToArrayOfInt(mensaje1);
+			p.partes_mundo1 = StringToArrayOfInt(mensaje1);
 			return p;
 		}
 			
@@ -314,11 +315,11 @@ Partes_de_mundo LeerPipe(int i, int Num_process, int ncol){
 
 
 /** Para escribir en los pipes */
-void EscribePipe(int i, int * parte_mundo, int Num_process, int num_lineas){ 
+void EscribePipe(int i, int ** parte_mundo, int Num_process, int num_lineas){ 
 	
 	//Declaracion de variables
-	char mensaje[500]; 
- 	char mensaje2[500]; 
+	char *mensaje; 
+ 	char *mensaje2; 
 
  	if(i%2==0 && i==0){
 		// pasar de int * parte_mundo[Num_lineas-1] a char [] mensaje 
@@ -813,7 +814,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
     		}
 
     		// Caso 3: Nos encontramos en el ultimo proceso, equivalente al numero de procesosTotales
-    		else if (1 < proceso && proceso = procesosTotales){
+    		else if (1 < proceso && proceso == procesosTotales){
 
 	    		// Caso 3.1: Borde superior
 	    		if (i == 0){
@@ -948,7 +949,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 		    }
 
     		// Caso 4: Hay un solo proceso Total y nos encontramos en el
-    		else if (proceso == 1 && proceso = procesosTotales){
+    		else if (proceso == 1 && proceso == procesosTotales){
 
 	    		// Casos de casillas:
 

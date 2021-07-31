@@ -32,6 +32,8 @@ int **parte_mundo;
 int columnas;
 
 
+
+
 struct Partes_de_mundo{
 	int * partes_mundo1;
 	int * partes_mundo2;
@@ -50,16 +52,17 @@ int main(int argc, char *argv[] ){
 	int Num_visualizaciones;
 	int filas;
 
+	int ***GeneracionesTotales[Num_process]; 							// Arreglo donde se almacenaran todas las generaciones de todos los procesos
+
 	Nodo *Lineas_de_mundo=NULL;
 	Num_process=strtol(argv[1],NULL,10);
 	Num_generaciones=strtol(argv[2],NULL,10);
 	Num_visualizaciones=strtol(argv[3],NULL,10);
 
-	// Variables para generaaciones:
-	int **Generaciones[Num_generaciones]; 						// Arreglo donde se almacenaran todas las generaciones
 	int cantidadParaVizualizar = Num_generaciones/Num_visualizaciones + Num_generaciones%Num_visualizaciones;
 
-	int **GenAVisualizar[cantidadParaVizualizar];
+	int GenAVisualizar[cantidadParaVizualizar];
+
 
 	FILE *file=fopen(argv[4],"rt");
 	if (file==NULL){
@@ -115,6 +118,8 @@ int main(int argc, char *argv[] ){
 		if(pid == 0 && k == 0){
 
 			//Proceso hijo
+			int ** parte_mundo[Num_process];
+
 
 			// Se cierran los pipes innecesarios
 			cerrar_pipes(i);
@@ -144,18 +149,21 @@ int main(int argc, char *argv[] ){
 			printf("Hola3\n");
 
 			/////////////////// GENERACIONES ///////////////////
-			
+
+				// Variables para generaaciones:
+				int Generaciones[Num_generaciones]; 							// Arreglo donde se almacenaran todas las generaciones
+
 
 				// Iteraciones para almacenar las generaciones el el arreglo
 				for (int l = 0; l < Num_generaciones; ++l){
 
-					//Si es la 1ra generación
+					//Si es la generación 0:
 					if (l==0){
 						Generaciones[l] = parte_mundo[i];
 					}
-					// Si no es la 1ra generación
+					// Si no es la generación 0
 					else{
-
+						
 						Generaciones[l] = gameOfLife(Cantidad_de_trabajo(i, filas, Num_process), columnas, Generaciones[l-1], pM.partes_mundo1, pM.partes_mundo2, Num_process, i);
 								
 						//Se escribe el pipe
@@ -164,23 +172,13 @@ int main(int argc, char *argv[] ){
 						//Se lee el pipe
 						pM = LeerPipe(i, Num_process, columnas);
 
-
-
 					}
 				}
-			
-				/////////////////////////////////////////////////////////
 
-				// Iteraciones para guardar en un arreglo solo las generaciones cada n_visualizaciones
-				for (int r = 0; r < cantidadParaVizualizar; r++){
+				GeneracionesTotales[i] = Generaciones;
 
-					GenAVisualizar[r] = Generaciones[r*Num_visualizaciones];
-					
-					printf("Generación %d: \n", i*Num_visualizaciones);
 
-					Imprimir(Generaciones[i*Num_visualizaciones], Cantidad_de_trabajo(i, filas, Num_process), columnas);
-				}
-
+		/////////////////// /////////////////// ///////////////////
 			
 
 
@@ -192,15 +190,36 @@ int main(int argc, char *argv[] ){
 			return 0;
 			
 		}
-		//pids[i]=pid;
+		pids[i]=pid;
 		//wait(NULL);	// Espera que cada hijo termine para que venga el siguiente 
 					// (Esto para ver si funcionan las funcion de imprimir y PrimerTrabajo pero se debe quitar 
 					// porque no tiene sentido crear uno tras otro)
 	}
 
+
 	//El padre espera a los hijos
 	for (int i = 0; i < Num_process; i++) {
         waitpid(pids[i], NULL, 0);
+
+        /////////////////////////////////////////////////////////
+
+
+        for (int i = 0; i < Num_process; ++i){
+
+			// Iteraciones para guardar en un arreglo solo las generaciones cada n_visualizaciones
+			for (int r = 0; r < cantidadParaVizualizar; r++){
+
+				GenAVisualizar[r] = GeneracionesTotales[i][r*Num_visualizaciones];
+				
+				printf("Generación %d: \n", i*Num_visualizaciones);
+
+				ImprimirArregloDeMatrices(GeneracionesTotales[i*Num_visualizaciones], Cantidad_de_trabajo(i, filas, Num_process), columnas);
+			}
+
+        }
+
+
+
     }
 
 }
@@ -503,7 +522,10 @@ char * ArrayOfInt2String(int *array, int ncol){
 		sprintf(&temp[i], "%d", array[i]);
 	}
 
+	printf("StringTemp: %s\n", temp);
+
 	return temp;
+	//free(temp);
 }
 
 
@@ -526,6 +548,31 @@ Nodo *TraducirMensaje(char *mensaje,int ncol){
 
 }
 
+/** Funcion para imprimir la arreglo de matrices */
+void ImprimirArregloDeMatrices(int *** ma, int Num_generaciones, int nfilas, int ncol){
+
+  	int i,m,n;
+
+ 	//Se imprime la matriz
+ 	for (i = 0; i < Num_generaciones; ++i){
+ 	 	for(m=0;m<nfilas;m++){		
+	        printf("\t\t\t\t");
+	        for(n=0;n<ncol;n++){
+	      
+	            //Si es 1 la celula esta viva, por lo que se imprime un 1
+	            if(ma[i][m][n] == 1){
+	                printf(ANSI_COLOR_GREEN   " 1 "   ANSI_COLOR_RESET); // Verde si la celula esta viva
+	            }
+	      		//Si no, esta muerta y se imprime un 0
+	            else{
+	                printf(ANSI_COLOR_RED     " 0 "     ANSI_COLOR_RESET); // Rojo si la celula esta muerta
+	            }
+	        }
+	        //Salto de linea al llegar al final de la fila
+	        printf("\n");
+	    }
+	}
+}
 
 /** Funcion para imprimir la matriz */
 void Imprimir(int ** ma, int nfilas, int ncol){
@@ -1081,7 +1128,7 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 		    }
 
     		// Caso 4: Hay un solo proceso Total y nos encontramos en el
-    		else if (proceso == 1 && proceso == procesosTotales){
+    		else if (proceso == 1 && procesosTotales == 1){
 
 	    		// Casos de casillas:
 
@@ -1216,6 +1263,145 @@ int ** gameOfLife(int filasM, int columnasN, int ** Matriz, int *partesMundo1, i
 		    	}
 	    	}
 
+		/*
+    		// Caso 5: Hay N procesos y N procesosTotales
+    		if (proceso == 1 && proceso = procesosTotales){
+
+	    		// Casos de casillas:
+
+	    		// Caso 5.1: Borde superior
+	    		if (i == 0){
+
+	    			// Caso 5.1.1: Esquina superior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j+1] + Matriz[i+1][j] + Matriz[i+1][j+1];
+	    			}
+
+	    			// Caso 5.1.2: Esquina superior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i][j-1] + Matriz[i+1][j-1] + Matriz[i+1][j];
+	    			}
+
+	    			// Caso 5.1.3: Borde superior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = 0; x <= 1; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 5.2: Borde inferior
+	    		else if (i == filasM - 1){
+
+	    			//printf("Borde Inferior\n");
+
+
+	    			// Caso 5.2.1: Esquina inferior izquierda
+	    			if(j == 0){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j] + Matriz[i-1][j+1] + Matriz[i][j+1] + partesMundo2[j] + partesMundo2[j+1];
+	    			}
+
+	    			// Caso 5.2.2: Esquina inferior derecha
+	    			else if(j == columnasN - 1){
+		    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+						vecinosVivos = Matriz[i-1][j-1] + Matriz[i-1][j] + Matriz[i][j-1] + partesMundo2[j-1] + partesMundo2[j];
+	    			}
+
+	    			// Caso 5.2.3: Borde inferior sin ser esquina
+	    			else{
+			    		// Verifica estado de los 5 vecinos
+			    		for (int x = -1; x <= 0; x++){
+
+				    		for (int y = -1; y <= 1; y++){
+
+				    			// Se omite contarse a si mismo como vecino
+				    			if (x == 0 && y == 0){
+				    				continue;
+				    			}
+
+				    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+			    				vecinosVivos += Matriz[i + x][j + y];
+
+				    		}
+			    		}
+
+			    		vecinosVivos = vecinosVivos + partesMundo2[j-1] + partesMundo2[j] + partesMundo2[j+1];
+		    		}
+	    		}
+
+	    		// Caso 5.3: Borde izquierdo sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == 0){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = 0; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 5.4: Borde derecho sin ser esquina
+	    		else if((i != 0 || i != filasM - 1) && j == columnasN - 1){
+		    		// Verifica estado de los 5 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 0; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+	    		}
+
+	    		// Caso 5.5: Casilla no esta en ningun extremo o borde
+	    		else{
+		    		// Verifica estado de los 8 vecinos
+		    		for (int x = -1; x <= 1; x++){
+
+			    		for (int y = -1; y <= 1; y++){
+
+			    			// Se omite contarse a si mismo como vecino
+			    			if (x == 0 && y == 0){
+			    				continue;
+			    			}
+
+			    			// Se suman los vecinos, el valor total serán los vecinosVivos. 
+		    				vecinosVivos += Matriz[i + x][j + y];
+
+			    		}
+		    		}
+		    	}
+    		}
+		*/
     		// Reglas del juego
 
     		// 1. Nacimiento: Célula muerta con exactamente 3 vecinos vivos se convierte en célula viva
